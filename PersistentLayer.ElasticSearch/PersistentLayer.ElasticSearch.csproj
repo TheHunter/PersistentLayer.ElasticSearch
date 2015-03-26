@@ -52,7 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="ISession.cs" />
     <Compile Include="Impl\EsTransactionProvider.cs" />
     <Compile Include="Impl\EsRootPagedDAO.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -64,7 +64,7 @@
     <Content Include="Release_Notes.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ComponentDiagram.cd" />
+    <None Include="diagrams\ComponentDiagram.cd" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
