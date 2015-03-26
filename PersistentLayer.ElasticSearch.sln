@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7F101CBF-AD4C-4246-866D-422CC4F7384F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{E7BECCFB-176F-4DC2-8686-53DEE0FD51D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersistentLayer.ElasticSearch", "PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.csproj", "{DD1A5E72-EAD3-4D73-934E-2C81F70013D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersistentLayer.ElasticSearch.Test", "PersistentLayer.ElasticSearch.Test\PersistentLayer.ElasticSearch.Test.csproj", "{095052F5-520C-4A33-9CD7-84167C2D81D5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DD1A5E72-EAD3-4D73-934E-2C81F70013D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD1A5E72-EAD3-4D73-934E-2C81F70013D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD1A5E72-EAD3-4D73-934E-2C81F70013D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD1A5E72-EAD3-4D73-934E-2C81F70013D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{095052F5-520C-4A33-9CD7-84167C2D81D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{095052F5-520C-4A33-9CD7-84167C2D81D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{095052F5-520C-4A33-9CD7-84167C2D81D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{095052F5-520C-4A33-9CD7-84167C2D81D5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DD1A5E72-EAD3-4D73-934E-2C81F70013D1} = {7F101CBF-AD4C-4246-866D-422CC4F7384F}
+		{095052F5-520C-4A33-9CD7-84167C2D81D5} = {E7BECCFB-176F-4DC2-8686-53DEE0FD51D8}
+	EndGlobalSection
+EndGlobal
