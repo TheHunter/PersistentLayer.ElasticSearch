@@ -153,6 +153,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool Dirty(params object[] instances)
         {
             throw new NotImplementedException();
+
         }
 
         public bool Dirty()
