@@ -25,6 +25,5 @@ D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearc
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch\bin\Debug\Nest.xml
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch\bin\Debug\Newtonsoft.Json.xml
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch\bin\Debug\PersistentLayer.xml
-D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch\obj\Debug\PersistentLayer.ElasticSearch.csprojResolveAssemblyReference.cache
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch\obj\Debug\PersistentLayer.ElasticSearch.dll
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch\obj\Debug\PersistentLayer.ElasticSearch.pdb
