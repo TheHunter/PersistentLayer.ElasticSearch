@@ -34,13 +34,13 @@ namespace PersistentLayer.ElasticSearch
         TEntity MakePersistent<TEntity>(TEntity entity)
             where TEntity : class;
 
-        IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entity)
+        IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entities)
             where TEntity : class;
 
         TEntity MakePersistent<TEntity>(TEntity entity, object id)
             where TEntity : class;
 
-        void MakeTransient<TEntity>(params TEntity[] entity)
+        void MakeTransient<TEntity>(params TEntity[] entities)
             where TEntity : class;
 
         void MakeTransient<TEntity>(params object[] ids)

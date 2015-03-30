@@ -73,25 +73,35 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity MakePersistent<TEntity>(TEntity entity)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index));
+            if (response.Created)
+                return entity;
+
+            throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
         }
 
-        public IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entity)
+        public IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            var response = this.Client.Bulk(descriptor => 
+                descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor.Index(this.Index))
+                );
+
+            return entities;
         }
 
         public TEntity MakePersistent<TEntity>(TEntity entity, object id)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index).Id(id.ToString()));
+            return entity;
         }
 
-        public void MakeTransient<TEntity>(params TEntity[] entity)
+        public void MakeTransient<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            var response = this.Client.Bulk(descriptor => descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor.Index(this.Index).Document(entity)));
+            return;
         }
 
         public void MakeTransient<TEntity>(params object[] ids)
