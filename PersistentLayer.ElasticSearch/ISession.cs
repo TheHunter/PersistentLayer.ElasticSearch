@@ -22,7 +22,7 @@ namespace PersistentLayer.ElasticSearch
         IEnumerable<TEntity> FindAll<TEntity>(Expression<Func<TEntity, bool>> predicate)
             where TEntity : class;
 
-        bool Exists<TEntity>(params object[] id)
+        bool Exists<TEntity>(params object[] ids)
             where TEntity : class;
 
         bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate)
@@ -34,7 +34,7 @@ namespace PersistentLayer.ElasticSearch
         TEntity MakePersistent<TEntity>(TEntity entity)
             where TEntity : class;
 
-        IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entities)
+        IEnumerable<IPersistenceResult<TEntity>> MakePersistent<TEntity>(params TEntity[] entities)
             where TEntity : class;
 
         TEntity MakePersistent<TEntity>(TEntity entity, object id)

@@ -4,21 +4,34 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Nest;
+using Newtonsoft.Json;
+using PersistentLayer.ElasticSearch.Cache;
+using PersistentLayer.ElasticSearch.Metadata;
 using PersistentLayer.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.Impl
 {
-    public class Session
+    public class ElasticSession
         : ISession
     {
+        private readonly Func<bool> tranInProgress;
+        private readonly JsonSerializerSettings jsonSettings;
+        private readonly Func<object, string> serializer;
+        private readonly ISessionCacheProvider localCache;
 
-        public Session(string indexName, ElasticClient client)
+        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, ElasticClient client)
         {
             this.Index = indexName;
+            this.tranInProgress = tranInProgress;
+            this.jsonSettings = jsonSettings;
             this.Client = client;
+            this.serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
+            this.localCache = null;
         }
 
         public string Index { get; private set; }
+
+        protected bool TranInProgress { get { return this.tranInProgress.Invoke(); } }
 
         protected ElasticClient Client { get; set; }
 
@@ -29,6 +42,9 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!request.IsValid)
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
+            IMetadataInfo metadata = new MetadataInfo(request.Id, request.Source, this.serializer, OriginContext.Storage, request.Version);
+            this.localCache.Attach(metadata);
+
             return request.Source;
         }
 
@@ -36,7 +52,19 @@ namespace PersistentLayer.ElasticSearch.Impl
             where TEntity : class
         {
             var response = this.Client.GetMany<TEntity>(ids.Cast<string>(), this.Index);
-            return response.Select(n => n.Source);
+            var list = new List<TEntity>();
+            if (this.TranInProgress)
+            {
+                foreach (var multiGetHit in response)
+                {
+                    list.Add(multiGetHit.Source);
+                    this.localCache.Attach(
+                        new MetadataInfo(multiGetHit.Id, multiGetHit.Source, this.serializer, OriginContext.Storage,
+                            multiGetHit.Version)
+                        );
+                }
+            }
+            return list;
         }
 
         public IEnumerable<TEntity> FindAll<TEntity>()
@@ -52,10 +80,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
-        public bool Exists<TEntity>(params object[] id)
+        public bool Exists<TEntity>(params object[] ids)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            return this.Client.Count<TEntity>(descriptor => descriptor.Index(this.Index)
+                .Query(queryDescriptor => queryDescriptor.Ids(ids.Select(n => n.ToString())))
+                ).Count == ids.Length;
         }
 
         public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate)
@@ -75,19 +105,44 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index));
             if (response.Created)
+            {
+                this.localCache.Attach(new MetadataInfo(response.Id, entity, this.serializer, OriginContext.Newone,
+                    response.Version));
                 return entity;
+            }
 
             throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
         }
 
-        public IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entities)
+        public IEnumerable<IPersistenceResult<TEntity>> MakePersistent<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
             var response = this.Client.Bulk(descriptor => 
                 descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor.Index(this.Index))
                 );
 
-            return entities;
+            var items = response.Items.ToArray();
+            var list = new List<IPersistenceResult<TEntity>>();
+            for (var index = 0; index < items.Length; index++)
+            {
+                var current = items[index];
+                list.Add(
+                    new PersistenceResult<TEntity>
+                    {
+                        Error = current.Error,
+                        Id = current.Id,
+                        Index = current.Index,
+                        Instance = entities[index],
+                        PersistenceType = PersistenceType.Create,
+                        IsValid = current.IsValid
+                    }
+                    );
+                if (current.IsValid)
+                    this.localCache.Attach(
+                        new MetadataInfo(current.Id, entities[index], this.serializer, OriginContext.Newone, current.Version)
+                        );
+            }
+            return list;
         }
 
         public TEntity MakePersistent<TEntity>(TEntity entity, object id)
@@ -100,14 +155,19 @@ namespace PersistentLayer.ElasticSearch.Impl
         public void MakeTransient<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
-            var response = this.Client.Bulk(descriptor => descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor.Index(this.Index).Document(entity)));
+            var response = this.Client.Bulk(descriptor =>
+                descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor.Index(this.Index).Document(entity))
+                );
             return;
         }
 
         public void MakeTransient<TEntity>(params object[] ids)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            var local = ids.Select(n => n.ToString());
+            var response = this.Client.Bulk(descriptor => 
+                descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s))
+                );
         }
 
         public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate)
