@@ -31,7 +31,10 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public string Index { get; private set; }
 
-        protected bool TranInProgress { get { return this.tranInProgress.Invoke(); } }
+        protected bool TranInProgress
+        {
+            get { return this.tranInProgress.Invoke(); }
+        }
 
         protected ElasticClient Client { get; set; }
 
@@ -60,8 +63,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                     list.Add(multiGetHit.Source);
                     this.localCache.Attach(
                         new MetadataInfo(multiGetHit.Id, multiGetHit.Source, this.serializer, OriginContext.Storage,
-                            multiGetHit.Version)
-                        );
+                            multiGetHit.Version));
                 }
             }
             return list;
@@ -84,8 +86,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             where TEntity : class
         {
             return this.Client.Count<TEntity>(descriptor => descriptor.Index(this.Index)
-                .Query(queryDescriptor => queryDescriptor.Ids(ids.Select(n => n.ToString())))
-                ).Count == ids.Length;
+                .Query(queryDescriptor => queryDescriptor.Ids(ids.Select(n => n.ToString()))))
+                .Count == ids.Length;
         }
 
         public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate)
@@ -117,9 +119,9 @@ namespace PersistentLayer.ElasticSearch.Impl
         public IEnumerable<IPersistenceResult<TEntity>> MakePersistent<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
-            var response = this.Client.Bulk(descriptor => 
-                descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor.Index(this.Index))
-                );
+            var response = this.Client.Bulk(descriptor =>
+                descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor
+                    .Index(this.Index)));
 
             var items = response.Items.ToArray();
             var list = new List<IPersistenceResult<TEntity>>();
@@ -135,12 +137,12 @@ namespace PersistentLayer.ElasticSearch.Impl
                         Instance = entities[index],
                         PersistenceType = PersistenceType.Create,
                         IsValid = current.IsValid
-                    }
-                    );
+                    });
                 if (current.IsValid)
+                {
                     this.localCache.Attach(
-                        new MetadataInfo(current.Id, entities[index], this.serializer, OriginContext.Newone, current.Version)
-                        );
+                        new MetadataInfo(current.Id, entities[index], this.serializer, OriginContext.Newone, current.Version));
+                }
             }
             return list;
         }
@@ -156,9 +158,10 @@ namespace PersistentLayer.ElasticSearch.Impl
             where TEntity : class
         {
             var response = this.Client.Bulk(descriptor =>
-                descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor.Index(this.Index).Document(entity))
-                );
-            return;
+                descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor
+                    .Index(this.Index).Document(entity)));
+            
+            this.localCache.Detach(entities);
         }
 
         public void MakeTransient<TEntity>(params object[] ids)
@@ -166,8 +169,9 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             var local = ids.Select(n => n.ToString());
             var response = this.Client.Bulk(descriptor => 
-                descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s))
-                );
+                descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s)));
+
+            this.localCache.Detach<TEntity>(ids);
         }
 
         public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate)
@@ -185,7 +189,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         public IEnumerable<TEntity> RefreshState<TEntity>(IEnumerable<TEntity> entities)
             where TEntity : class
         {
-            throw new NotImplementedException();
+            return entities;
         }
 
         public IPagedResult<TEntity> GetPagedResult<TEntity>(int startIndex, int pageSize, Expression<Func<TEntity, bool>> predicate) where TEntity : class
@@ -223,7 +227,6 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool Dirty(params object[] instances)
         {
             throw new NotImplementedException();
-
         }
 
         public bool Dirty()

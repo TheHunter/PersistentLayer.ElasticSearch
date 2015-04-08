@@ -18,6 +18,9 @@ namespace PersistentLayer.ElasticSearch.Cache
         bool Detach<TEntity>(params object[] id)
             where TEntity: class;
 
+        bool Detach<TEntity>(params TEntity[] instances)
+            where TEntity : class;
+
         bool Detach(Expression<Func<IMetadataInfo, bool>> exp);
     }
 }
