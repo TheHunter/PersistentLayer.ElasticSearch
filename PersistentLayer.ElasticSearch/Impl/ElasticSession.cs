@@ -126,9 +126,10 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.IsValid)
                     throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
 
-                this.localCache.Detach<TEntity>(id);
-                this.localCache.Attach(new MetadataInfo(id, entity, this.serializer, OriginContext.Newone,
-                    response.Version));
+                //this.localCache.Detach<TEntity>(id);
+                //this.localCache.Attach(new MetadataInfo(id, entity, this.serializer, OriginContext.Storage,
+                //    response.Version));
+                this.UpdateMetadata<TEntity>(id, entity, response.Version);
             }
             return entity;
         }
@@ -295,6 +296,13 @@ namespace PersistentLayer.ElasticSearch.Impl
         public ISession ChildSession()
         {
             throw new NotImplementedException();
+        }
+
+        private void UpdateMetadata<TEntity>(string id, object instance, string version)
+            where TEntity: class
+        {
+            this.localCache.Detach<TEntity>(id);
+            this.localCache.Attach(new MetadataInfo(id, instance, this.serializer, OriginContext.Storage, version));
         }
     }
 }

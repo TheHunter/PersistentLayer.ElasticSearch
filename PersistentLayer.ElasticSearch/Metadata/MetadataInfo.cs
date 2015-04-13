@@ -30,7 +30,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.PreviousStatus = serializer.Invoke(instance);
             this.Origin = origin;
             this.InstanceType = instance.GetType();
-            this.Version = version == null || version.Trim().Equals(string.Empty) ? "0": version;
+            this.Version = version == null || version.Trim().Equals(string.Empty) ? "0" : version;
         }
 
         /// <summary>

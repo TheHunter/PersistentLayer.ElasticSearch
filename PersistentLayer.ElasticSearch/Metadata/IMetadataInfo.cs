@@ -50,6 +50,12 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </value>
         Type InstanceType { get; }
 
+        /// <summary>
+        /// Gets the version.
+        /// </summary>
+        /// <value>
+        /// The version.
+        /// </value>
         string Version { get; }
 
         /// <summary>
