@@ -11,7 +11,7 @@ namespace PersistentLayer.ElasticSearch.Cache
     {
         string Index { get; }
 
-        bool Cached<TEntity>(params string[] id)
+        bool Cached<TEntity>(params string[] ids)
             where TEntity : class;
 
         bool Cached(params object[] instances);

@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cache\IMetadataCache.cs" />
+    <Compile Include="Cache\MetadataCache.cs" />
     <Compile Include="IElasticSession.cs" />
     <Compile Include="Impl\EsTransactionProvider.cs" />
     <Compile Include="Impl\EsRootPagedDAO.cs" />
