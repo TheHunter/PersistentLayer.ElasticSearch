@@ -52,7 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cache\ISessionCacheProvider.cs" />
+    <Compile Include="Cache\IMetadataCache.cs" />
     <Compile Include="IElasticSession.cs" />
     <Compile Include="Impl\EsTransactionProvider.cs" />
     <Compile Include="Impl\EsRootPagedDAO.cs" />

@@ -12,7 +12,6 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool IsValid { get; set; }
         public string Index { get; set; }
         public string Id { get; set; }
-        public TInstance Instance { get; set; }
         public PersistenceType PersistenceType { get; set; }
         public string Error { get; set; }
     }

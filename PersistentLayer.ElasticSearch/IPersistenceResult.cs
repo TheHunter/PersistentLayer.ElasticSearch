@@ -19,8 +19,6 @@ namespace PersistentLayer.ElasticSearch
 
         string Id { get; }
 
-        TInstance Instance { get; }
-
         PersistenceType PersistenceType { get; }
         
         string Error { get; }

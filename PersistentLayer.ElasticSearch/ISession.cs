@@ -52,9 +52,6 @@ namespace PersistentLayer.ElasticSearch
         TEntity RefreshState<TEntity>(TEntity entity)
             where TEntity : class;
 
-        IEnumerable<TEntity> RefreshState<TEntity>(IEnumerable<TEntity> entities)
-            where TEntity : class;
-
         IPagedResult<TEntity> GetPagedResult<TEntity>(int startIndex, int pageSize, Expression<Func<TEntity, bool>> predicate)
             where TEntity : class;
 
@@ -62,9 +59,6 @@ namespace PersistentLayer.ElasticSearch
             where TEntity : class;
 
         TEntity UniqueResult<TEntity>(Expression<Func<TEntity, bool>> predicate)
-            where TEntity : class;
-
-        TEntity Merge<TEntity>(TEntity instance)
             where TEntity : class;
 
         bool Cached<TEntity>(params object[] ids)
@@ -76,23 +70,14 @@ namespace PersistentLayer.ElasticSearch
 
         bool Dirty();
 
-        void Restore(params object[] instances);
-
         void Evict(params object[] instances);
 
         void Evict<TEntity>(params object[] ids)
             where TEntity : class;
 
-        void Evict<TEntity>(Expression<Func<TEntity, bool>> predicate)
-            where TEntity : class;
-
         void Evict();
 
         void Flush();
-
-        bool Attach(object instance);
-
-        bool Detach(object instance);
 
         ISession ChildSession();
     }
