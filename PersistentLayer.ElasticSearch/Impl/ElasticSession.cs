@@ -134,8 +134,21 @@ namespace PersistentLayer.ElasticSearch.Impl
         }
 
         public TEntity Update<TEntity>(TEntity entity, long? version = null)
+            where TEntity : class
         {
+            var id = this.Client.Infer.Id(entity);
+            if (string.IsNullOrWhiteSpace(id))
+                throw new BusinessPersistentException("Impossible to update the given instance because the identifier is missing.", "Update");
 
+            var response = version == null ? this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity))
+                : this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Version(version.Value));
+
+            if (!response.IsValid)
+                throw new BusinessPersistentException("Error on updating the given instance.", "Update");
+
+            this.localCache.Detach<TEntity>(id);
+            this.localCache.Attach(new MetadataInfo(id, entity, this.serializer, OriginContext.Storage,
+                response.Version));
 
             return entity;
         }
@@ -173,12 +186,12 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity MakePersistent<TEntity>(TEntity entity, object id)
             where TEntity : class
         {
-            var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index).Id(id.ToString()));
-            if (response.Created)
-            {
-                this.localCache.Attach(new MetadataInfo(id.ToString(), entity, this.serializer, OriginContext.Newone, response.Version));
-            }
-            // otherwise error...
+            // questa sarebbe un aggiornamento del documento in questione.
+            var response = this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id.ToString()));
+            if (!response.IsValid)
+                throw new BusinessPersistentException("Error on updating the given instance", "MakePersistent");
+
+            this.localCache.Attach(new MetadataInfo(id.ToString(), entity, this.serializer, OriginContext.Storage, response.Version));
             return entity;
         }
 
