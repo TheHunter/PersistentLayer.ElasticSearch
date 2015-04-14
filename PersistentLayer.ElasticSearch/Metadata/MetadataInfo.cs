@@ -6,7 +6,7 @@ using System.Text;
 namespace PersistentLayer.ElasticSearch.Metadata
 {
     /// <summary>
-    /// 
+    /// Metadata
     /// </summary>
     public class MetadataInfo
         : IMetadataInfo

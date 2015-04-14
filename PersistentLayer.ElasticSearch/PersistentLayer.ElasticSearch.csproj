@@ -59,6 +59,7 @@
     <Compile Include="Impl\EsRootPagedDAO.cs" />
     <Compile Include="Impl\ElasticSession.cs" />
     <Compile Include="Impl\PersistenceResult.cs" />
+    <Compile Include="Impl\StatelessSession.cs" />
     <Compile Include="IPersistenceResult.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="Metadata\IMetadataInfo.cs" />

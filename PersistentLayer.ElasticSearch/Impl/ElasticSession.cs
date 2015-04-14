@@ -45,8 +45,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!request.IsValid)
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
-            IMetadataInfo metadata = new MetadataInfo(request.Id, request.Source, this.serializer, OriginContext.Storage, request.Version);
-            this.localCache.Attach(metadata);
+            if (this.TranInProgress)
+                this.localCache.Attach(new MetadataInfo(request.Id, request.Source, this.serializer, OriginContext.Storage, request.Version));
 
             return request.Source;
         }
@@ -56,15 +56,16 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             var response = this.Client.GetMany<TEntity>(ids.Cast<string>(), this.Index);
             var list = new List<TEntity>();
-            if (this.TranInProgress)
+            
+            if (!this.TranInProgress)
+                return list;
+
+            foreach (var multiGetHit in response)
             {
-                foreach (var multiGetHit in response)
-                {
-                    list.Add(multiGetHit.Source);
-                    this.localCache.Attach(
-                        new MetadataInfo(multiGetHit.Id, multiGetHit.Source, this.serializer, OriginContext.Storage,
-                            multiGetHit.Version));
-                }
+                list.Add(multiGetHit.Source);
+                this.localCache.Attach(
+                    new MetadataInfo(multiGetHit.Id, multiGetHit.Source, this.serializer, OriginContext.Storage,
+                        multiGetHit.Version));
             }
             return list;
         }
@@ -126,9 +127,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.IsValid)
                     throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
 
-                //this.localCache.Detach<TEntity>(id);
-                //this.localCache.Attach(new MetadataInfo(id, entity, this.serializer, OriginContext.Storage,
-                //    response.Version));
                 this.UpdateMetadata<TEntity>(id, entity, response.Version);
             }
             return entity;
@@ -147,9 +145,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!response.IsValid)
                 throw new BusinessPersistentException("Error on updating the given instance.", "Update");
 
-            this.localCache.Detach<TEntity>(id);
-            this.localCache.Attach(new MetadataInfo(id, entity, this.serializer, OriginContext.Storage,
-                response.Version));
+            this.UpdateMetadata<TEntity>(id, entity, response.Version);
 
             return entity;
         }
@@ -199,6 +195,10 @@ namespace PersistentLayer.ElasticSearch.Impl
         public void MakeTransient<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
+            /*
+            prima occorre cancellare i dati dalla cache, poi successivamente occorre metterli in batch per la cancellazione...
+            */
+
             var response = this.Client.Bulk(descriptor =>
                 descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor
                     .Index(this.Index).Document(entity)));
@@ -229,10 +229,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!response.Found)
                 throw new ExecutionQueryException("The given instance wasn't found on storage.", "MakeTransient");
 
-            this.localCache.Detach<TEntity>(response.Id);
-            this.localCache.Attach(new MetadataInfo(response.Id, response.Source, this.serializer, OriginContext.Storage,
-                response.Version));
-
+            this.UpdateMetadata<TEntity>(response.Id, entity, response.Version);
             return response.Source;
         }
 
