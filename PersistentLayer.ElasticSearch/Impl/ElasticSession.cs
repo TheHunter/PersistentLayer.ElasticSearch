@@ -46,7 +46,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
             if (this.TranInProgress)
-                this.localCache.Attach(new MetadataInfo(request.Id, request.Source, this.serializer, OriginContext.Storage, request.Version));
+                this.localCache.Attach(new MetadataInfo(request.Id, request.Index, request.Type, request.Source, this.serializer, OriginContext.Storage, request.Version));
 
             return request.Source;
         }
@@ -64,7 +64,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             {
                 list.Add(multiGetHit.Source);
                 this.localCache.Attach(
-                    new MetadataInfo(multiGetHit.Id, multiGetHit.Source, this.serializer, OriginContext.Storage,
+                    new MetadataInfo(multiGetHit.Id, multiGetHit.Index, multiGetHit.Type, multiGetHit.Source, this.serializer, OriginContext.Storage,
                         multiGetHit.Version));
             }
             return list;
@@ -113,7 +113,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
 
-                this.localCache.Attach(new MetadataInfo(response.Id, entity, this.serializer, OriginContext.Newone,
+                this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Newone,
                     response.Version));
                 return entity;
             }
@@ -127,7 +127,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.IsValid)
                     throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
 
-                this.UpdateMetadata<TEntity>(id, entity, response.Version);
+                //this.UpdateMetadata<TEntity>(id, entity, response.Version);
+
             }
             return entity;
         }
@@ -145,7 +146,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!response.IsValid)
                 throw new BusinessPersistentException("Error on updating the given instance.", "Update");
 
-            this.UpdateMetadata<TEntity>(id, entity, response.Version);
+            //this.UpdateMetadata<TEntity>(id, entity, response.Version);
 
             return entity;
         }
@@ -174,7 +175,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (current.IsValid)
                 {
                     this.localCache.Attach(
-                        new MetadataInfo(current.Id, entities[index], this.serializer, OriginContext.Newone, current.Version));
+                        new MetadataInfo(current.Id, current.Index, current.Type, entities[index], this.serializer, OriginContext.Newone, current.Version));
                 }
             }
             return list;
@@ -188,7 +189,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!response.IsValid)
                 throw new BusinessPersistentException("Error on updating the given instance", "MakePersistent");
 
-            this.localCache.Attach(new MetadataInfo(id.ToString(), entity, this.serializer, OriginContext.Storage, response.Version));
+            this.localCache.Attach(new MetadataInfo(id.ToString(), response.Index, response.Type, entity, this.serializer, OriginContext.Storage, response.Version));
             return entity;
         }
 
@@ -229,7 +230,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!response.Found)
                 throw new ExecutionQueryException("The given instance wasn't found on storage.", "MakeTransient");
 
-            this.UpdateMetadata<TEntity>(response.Id, entity, response.Version);
+            //this.UpdateMetadata<TEntity>(response.Id, entity, response.Version);
             return response.Source;
         }
 
@@ -295,11 +296,11 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
-        private void UpdateMetadata<TEntity>(string id, object instance, string version)
-            where TEntity: class
-        {
-            this.localCache.Detach<TEntity>(id);
-            this.localCache.Attach(new MetadataInfo(id, instance, this.serializer, OriginContext.Storage, version));
-        }
+        //private void UpdateMetadata<TEntity>(string id, object instance, string version)
+        //    where TEntity: class
+        //{
+        //    this.localCache.Detach<TEntity>(id);
+        //    this.localCache.Attach(new MetadataInfo(id, instance, this.serializer, OriginContext.Storage, version));
+        //}
     }
 }

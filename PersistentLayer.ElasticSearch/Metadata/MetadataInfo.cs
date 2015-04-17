@@ -17,17 +17,22 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Initializes a new instance of the <see cref="MetadataInfo"/> class.
         /// </summary>
         /// <param name="id">The identifier.</param>
+        /// <param name="typeName"></param>
         /// <param name="instance">The instance.</param>
         /// <param name="serializer">The serializer.</param>
         /// <param name="origin">The origin.</param>
         /// <param name="version">The version.</param>
-        public MetadataInfo(string id, object instance, Func<object, string> serializer, OriginContext origin, string version = null)
+        /// <param name="indexName"></param>
+        public MetadataInfo(string id, string indexName, string typeName,
+            object instance, Func<object, string> serializer, OriginContext origin, string version = null)
         {
             this.serializer = serializer;
 
             this.Id = id;
+            this.IndexName = indexName;
+            this.TypeName = typeName;
             this.CurrentStatus = instance;
-            this.PreviousStatus = serializer.Invoke(instance);
+            this.OriginalStatus = serializer.Invoke(instance);
             this.Origin = origin;
             this.InstanceType = instance.GetType();
             this.Version = version == null || version.Trim().Equals(string.Empty) ? "0" : version;
@@ -40,6 +45,22 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// The identifier.
         /// </value>
         public string Id { get; private set; }
+
+        /// <summary>
+        /// Gets the name of the index.
+        /// </summary>
+        /// <value>
+        /// The name of the index.
+        /// </value>
+        public string IndexName { get; private set; }
+
+        /// <summary>
+        /// Gets the name of the type.
+        /// </summary>
+        /// <value>
+        /// The name of the type.
+        /// </value>
+        public string TypeName { get; private set; }
 
         /// <summary>
         /// Gets the current status.
@@ -55,7 +76,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <value>
         /// The previous status.
         /// </value>
-        public string PreviousStatus { get; private set; }
+        public string OriginalStatus { get; private set; }
 
         /// <summary>
         /// Gets the origin of the current instance.
@@ -88,7 +109,24 @@ namespace PersistentLayer.ElasticSearch.Metadata
         public bool HasChanged()
         {
             string currentStatus = this.serializer.Invoke(this.CurrentStatus);
-            return !currentStatus.Equals(this.PreviousStatus, StringComparison.CurrentCulture);
+            return !currentStatus.Equals(this.OriginalStatus, StringComparison.CurrentCulture);
+        }
+
+        /// <summary>
+        /// Updates the status.
+        /// </summary>
+        /// <param name="instance">The instance.</param>
+        /// <param name="version">The version.</param>
+        /// <exception cref="System.ArgumentException">The given instance cannot be replace to actual statement becuase its type is not compatible.;instance</exception>
+        public void UpdateStatus(object instance, string version)
+        {
+            if (!this.InstanceType.IsInstanceOfType(instance))
+                throw new ArgumentException("The given instance cannot be replace to actual statement becuase its type is not compatible.", "instance");
+
+            this.OriginalStatus = serializer.Invoke(this.CurrentStatus);
+            this.CurrentStatus = instance; //using a merge It could be better...
+            this.InstanceType = instance.GetType();
+            this.Version = version;
         }
     }
 }

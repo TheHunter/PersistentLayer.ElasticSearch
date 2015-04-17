@@ -19,6 +19,22 @@ namespace PersistentLayer.ElasticSearch.Metadata
         string Id { get; }
 
         /// <summary>
+        /// Gets the name of the index.
+        /// </summary>
+        /// <value>
+        /// The name of the index.
+        /// </value>
+        string IndexName { get; }
+
+        /// <summary>
+        /// Gets the name of the type.
+        /// </summary>
+        /// <value>
+        /// The name of the type.
+        /// </value>
+        string TypeName { get; }
+
+        /// <summary>
         /// Gets the current status.
         /// </summary>
         /// <value>
@@ -32,7 +48,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <value>
         /// The previous status.
         /// </value>
-        string PreviousStatus { get; }
+        string OriginalStatus { get; }
 
         /// <summary>
         /// Gets the origin of the current instance.
@@ -63,5 +79,12 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </summary>
         /// <returns></returns>
         bool HasChanged();
+
+        /// <summary>
+        /// Updates the status.
+        /// </summary>
+        /// <param name="instance">The instance.</param>
+        /// <param name="version">The version.</param>
+        void UpdateStatus(object instance, string version);
     }
 }

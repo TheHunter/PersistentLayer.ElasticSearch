@@ -11,13 +11,13 @@ namespace PersistentLayer.ElasticSearch.Cache
         : IMetadataCache, IDisposable
     {
         private readonly HashSet<IMetadataInfo> localCache;
-        private readonly HashSet<IMetadataInfo> metadataToDelete;
+        private readonly Dictionary<Type, List<IMetadataInfo>> metadataToDelete;
 
         public MetadataCache(string index)
         {
             this.Index = index;
             this.localCache = new HashSet<IMetadataInfo>();
-            this.metadataToDelete = new HashSet<IMetadataInfo>();
+            this.metadataToDelete = new Dictionary<Type, List<IMetadataInfo>>();
         }
 
         public string Index { get; private set; }

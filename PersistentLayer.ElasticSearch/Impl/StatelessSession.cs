@@ -49,7 +49,9 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public bool Exists<TEntity>(params object[] ids) where TEntity : class
         {
-            throw new NotImplementedException();
+            return this.Client.Count<TEntity>(descriptor => descriptor.Index(this.Index)
+                .Query(queryDescriptor => queryDescriptor.Ids(ids.Select(n => n.ToString()))))
+                .Count == ids.Length;
         }
 
         public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class
@@ -64,27 +66,86 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public TEntity MakePersistent<TEntity>(TEntity entity) where TEntity : class
         {
-            throw new NotImplementedException();
+            var id = this.Client.Infer.Id(entity);
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index));
+                if (!response.Created)
+                    throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
+                return entity;
+            }
+            else
+            {
+                IUpdateResponse response =
+                    this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index));
+
+                if (!response.IsValid)
+                    throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
+            }
+            return entity;
+        }
+
+        public TEntity Update<TEntity>(TEntity entity, long? version = null)
+            where TEntity : class
+        {
+            var id = this.Client.Infer.Id(entity);
+            if (string.IsNullOrWhiteSpace(id))
+                throw new BusinessPersistentException("Impossible to update the given instance because the identifier is missing.", "Update");
+
+            var response = version == null ? this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity))
+                : this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Version(version.Value));
+
+            if (!response.IsValid)
+                throw new BusinessPersistentException("Error on updating the given instance.", "Update");
+
+            return entity;
         }
 
         public IEnumerable<IPersistenceResult<TEntity>> MakePersistent<TEntity>(params TEntity[] entities) where TEntity : class
         {
-            throw new NotImplementedException();
+            var response = this.Client.Bulk(descriptor =>
+                descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor
+                    .Index(this.Index)));
+
+            var items = response.Items.ToArray();
+            var list = new List<IPersistenceResult<TEntity>>();
+            for (var index = 0; index < items.Length; index++)
+            {
+                var current = items[index];
+                list.Add(
+                    new PersistenceResult<TEntity>
+                    {
+                        Error = current.Error,
+                        Id = current.Id,
+                        Index = current.Index,
+                        PersistenceType = PersistenceType.Create,
+                        IsValid = current.IsValid
+                    });
+            }
+            return list;
         }
 
         public TEntity MakePersistent<TEntity>(TEntity entity, object id) where TEntity : class
         {
-            throw new NotImplementedException();
+            var response = this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id.ToString()));
+            if (!response.IsValid)
+                throw new BusinessPersistentException("Error on updating the given instance", "MakePersistent");
+
+            return entity;
         }
 
         public void MakeTransient<TEntity>(params TEntity[] entities) where TEntity : class
         {
-            throw new NotImplementedException();
+            this.Client.Bulk(descriptor =>
+                descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor
+                    .Index(this.Index).Document(entity)));
         }
 
         public void MakeTransient<TEntity>(params object[] ids) where TEntity : class
         {
-            throw new NotImplementedException();
+            var local = ids.Select(n => n.ToString());
+            this.Client.Bulk(descriptor =>
+                descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s)));
         }
 
         public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class
@@ -114,42 +175,38 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public bool Cached<TEntity>(params object[] ids) where TEntity : class
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public bool Cached(params object[] instances)
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public bool Dirty(params object[] instances)
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public bool Dirty()
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public void Evict(params object[] instances)
         {
-            throw new NotImplementedException();
         }
 
         public void Evict<TEntity>(params object[] ids) where TEntity : class
         {
-            throw new NotImplementedException();
         }
 
         public void Evict()
         {
-            throw new NotImplementedException();
         }
 
         public void Flush()
         {
-            throw new NotImplementedException();
         }
 
         public ISession ChildSession()
