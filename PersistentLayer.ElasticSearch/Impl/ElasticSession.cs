@@ -64,20 +64,35 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             var list = new List<TEntity>();
             var typeName = this.Client.Infer.TypeName<TEntity>();
-            //var response = this.Client.GetMany<TEntity>(ids.Cast<string>(), this.Index);
-            
-            //if (!this.TranInProgress)
-            //    return list;
 
-            //foreach (var multiGetHit in response)
-            //{
-            //    list.Add(multiGetHit.Source);
-            //    this.localCache.Attach(
-            //        new MetadataInfo(multiGetHit.Id, multiGetHit.Index, multiGetHit.Type, multiGetHit.Source, this.serializer, OriginContext.Storage,
-            //            multiGetHit.Version));
-            //}
+            var idsToHit = new List<string>();
 
-            this.localCache.FindMetadata(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName));
+            var metadata = this.localCache.FindMetadata(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName)).ToArray();
+            foreach (var id in ids.Select(n => n.ToString()))
+            {
+                var current = metadata.FirstOrDefault(n => n.Id.Equals(id));
+                if (current != null)
+                {
+                    list.Add(current.CurrentStatus as dynamic);
+                }
+                else
+                {
+                    idsToHit.Add(id);
+                }
+            }
+
+            var response = this.Client.GetMany<TEntity>(idsToHit, this.Index).Where(n => n.Found).ToArray();
+            list.AddRange(response.Select(n => n.Source));
+
+            if (this.TranInProgress)
+            {
+                foreach (var multiGetHit in response)
+                {
+                    this.localCache.Attach(
+                        new MetadataInfo(multiGetHit.Id, multiGetHit.Index, multiGetHit.Type, multiGetHit.Source, this.serializer, OriginContext.Storage,
+                            multiGetHit.Version));
+                }
+            }
 
             return list;
         }
@@ -125,8 +140,12 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
 
-                this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Newone,
+                if (this.TranInProgress)
+                {
+                    this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Newone,
                     response.Version));
+                }
+                
                 return entity;
             }
             else
@@ -184,7 +203,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                         PersistenceType = PersistenceType.Create,
                         IsValid = current.IsValid
                     });
-                if (current.IsValid)
+
+                if (current.IsValid && this.TranInProgress)
                 {
                     this.localCache.Attach(
                         new MetadataInfo(current.Id, current.Index, current.Type, entities[index], this.serializer, OriginContext.Newone, current.Version));

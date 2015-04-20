@@ -17,12 +17,12 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Initializes a new instance of the <see cref="MetadataInfo"/> class.
         /// </summary>
         /// <param name="id">The identifier.</param>
-        /// <param name="typeName"></param>
+        /// <param name="indexName">Name of the index.</param>
+        /// <param name="typeName">Name of the type.</param>
         /// <param name="instance">The instance.</param>
         /// <param name="serializer">The serializer.</param>
         /// <param name="origin">The origin.</param>
         /// <param name="version">The version.</param>
-        /// <param name="indexName"></param>
         public MetadataInfo(string id, string indexName, string typeName,
             object instance, Func<object, string> serializer, OriginContext origin, string version = null)
         {
@@ -123,7 +123,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             if (!this.InstanceType.IsInstanceOfType(instance))
                 throw new ArgumentException("The given instance cannot be replace to actual statement becuase its type is not compatible.", "instance");
 
-            this.OriginalStatus = serializer.Invoke(this.CurrentStatus);
+            this.OriginalStatus = this.serializer.Invoke(this.CurrentStatus);
             this.CurrentStatus = instance; //using a merge It could be better...
             this.InstanceType = instance.GetType();
             this.Version = version;
