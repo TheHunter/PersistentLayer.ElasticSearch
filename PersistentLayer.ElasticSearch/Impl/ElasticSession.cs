@@ -41,6 +41,14 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity FindBy<TEntity>(object id)
             where TEntity : class
         {
+            var typeName = this.Client.Infer.TypeName<TEntity>();
+            var metadata = this.localCache.MetadataExpression(infos => 
+                infos.FirstOrDefault(info => info.Id == id.ToString() && info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName))
+                );
+
+            if (metadata != null)
+                return metadata.CurrentStatus as dynamic;
+
             var request = this.Client.Get<TEntity>(id.ToString(), this.Index);
             if (!request.IsValid)
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
@@ -54,19 +62,23 @@ namespace PersistentLayer.ElasticSearch.Impl
         public IEnumerable<TEntity> FindBy<TEntity>(params object[] ids)
             where TEntity : class
         {
-            var response = this.Client.GetMany<TEntity>(ids.Cast<string>(), this.Index);
             var list = new List<TEntity>();
+            var typeName = this.Client.Infer.TypeName<TEntity>();
+            //var response = this.Client.GetMany<TEntity>(ids.Cast<string>(), this.Index);
             
-            if (!this.TranInProgress)
-                return list;
+            //if (!this.TranInProgress)
+            //    return list;
 
-            foreach (var multiGetHit in response)
-            {
-                list.Add(multiGetHit.Source);
-                this.localCache.Attach(
-                    new MetadataInfo(multiGetHit.Id, multiGetHit.Index, multiGetHit.Type, multiGetHit.Source, this.serializer, OriginContext.Storage,
-                        multiGetHit.Version));
-            }
+            //foreach (var multiGetHit in response)
+            //{
+            //    list.Add(multiGetHit.Source);
+            //    this.localCache.Attach(
+            //        new MetadataInfo(multiGetHit.Id, multiGetHit.Index, multiGetHit.Type, multiGetHit.Source, this.serializer, OriginContext.Storage,
+            //            multiGetHit.Version));
+            //}
+
+            this.localCache.FindMetadata(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName));
+
             return list;
         }
 
