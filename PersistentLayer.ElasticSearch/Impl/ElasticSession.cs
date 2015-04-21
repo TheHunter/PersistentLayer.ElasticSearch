@@ -100,8 +100,23 @@ namespace PersistentLayer.ElasticSearch.Impl
         public IEnumerable<TEntity> FindAll<TEntity>()
             where TEntity : class
         {
-            return this.Client.Search<TEntity>(descriptor => descriptor.Index(this.Index))
-                .Documents;
+            var response = this.Client.Search<TEntity>(descriptor => descriptor
+                .Index(this.Index)
+                .From(0)
+                .Take(20)   // numero di default.
+                );
+
+            var hits =
+                    response.Hits.Select(
+                        n =>
+                            new MetadataInfo(n.Id, n.Index, n.Type, n.Source, this.serializer, OriginContext.Storage,
+                                n.Version) as IMetadataInfo).ToArray();
+
+            if (this.TranInProgress)
+            {
+                this.localCache.Attach(hits);
+            }
+            return response.Hits.Select(n => n.Source).ToArray();
         }
 
         public IEnumerable<TEntity> FindAll<TEntity>(Expression<Func<TEntity, bool>> predicate)
@@ -133,33 +148,41 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity MakePersistent<TEntity>(TEntity entity)
             where TEntity : class
         {
+            if (!this.TranInProgress)
+                return entity;
+
             var id = this.Client.Infer.Id(entity);
+            var typeName = this.Client.Infer.TypeName<TEntity>();
             if (string.IsNullOrWhiteSpace(id))
             {
                 var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index));
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
 
-                if (this.TranInProgress)
-                {
-                    this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Newone,
+                this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Newone,
                     response.Version));
-                }
-                
                 return entity;
             }
             else
             {
-                var cached = this.localCache.MetadataExpression(infos => infos.FirstOrDefault(info => info.Id == id && info.GetType() == typeof(TEntity)));
+                var cached = this.localCache.MetadataExpression(infos => infos.FirstOrDefault(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName) && info.Id.Equals(id)));
 
-                IUpdateResponse response = cached == null ? this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index))
-                    : this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index).Version(Convert.ToInt64(cached.Version)));
+                //IUpdateResponse response = cached == null ? this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index))
+                //    : this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index).Version(Convert.ToInt64(cached.Version)));
 
-                if (!response.IsValid)
-                    throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
+                //if (!response.IsValid)
+                //    throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
 
                 //this.UpdateMetadata<TEntity>(id, entity, response.Version);
-
+                IUpdateResponse response;
+                if (cached != null)
+                {
+                    cached.UpdateStatus(entity);
+                }
+                else
+                {
+                    
+                }
             }
             return entity;
         }

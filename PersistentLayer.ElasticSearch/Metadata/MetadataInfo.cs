@@ -118,15 +118,35 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <param name="instance">The instance.</param>
         /// <param name="version">The version.</param>
         /// <exception cref="System.ArgumentException">The given instance cannot be replace to actual statement becuase its type is not compatible.;instance</exception>
-        public void UpdateStatus(object instance, string version)
+        public void UpdateStatus(object instance)
         {
             if (!this.InstanceType.IsInstanceOfType(instance))
                 throw new ArgumentException("The given instance cannot be replace to actual statement becuase its type is not compatible.", "instance");
 
             this.OriginalStatus = this.serializer.Invoke(this.CurrentStatus);
             this.CurrentStatus = instance; //using a merge It could be better...
-            this.InstanceType = instance.GetType();
-            this.Version = version;
+            this.InstanceType = instance.GetType();            
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (this.GetType() == obj.GetType())
+                return this.GetHashCode() == obj.GetHashCode();
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Id.GetHashCode() - (this.IndexName.GetHashCode() + this.TypeName.GetHashCode());
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Id: {0}, Index: {1}, TypeName: {2}, Version: {3}", this.Id, this.IndexName, this.TypeName, this.Version);
         }
     }
 }

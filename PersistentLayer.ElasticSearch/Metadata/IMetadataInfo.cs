@@ -84,7 +84,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Updates the status.
         /// </summary>
         /// <param name="instance">The instance.</param>
-        /// <param name="version">The version.</param>
-        void UpdateStatus(object instance, string version);
+        void UpdateStatus(object instance);
     }
 }
