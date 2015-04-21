@@ -166,22 +166,19 @@ namespace PersistentLayer.ElasticSearch.Impl
             else
             {
                 var cached = this.localCache.MetadataExpression(infos => infos.FirstOrDefault(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName) && info.Id.Equals(id)));
-
-                //IUpdateResponse response = cached == null ? this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index))
-                //    : this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index).Version(Convert.ToInt64(cached.Version)));
-
-                //if (!response.IsValid)
-                //    throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
-
-                //this.UpdateMetadata<TEntity>(id, entity, response.Version);
                 IUpdateResponse response;
+
                 if (cached != null)
                 {
                     cached.UpdateStatus(entity);
                 }
                 else
                 {
-                    
+                    response = this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index));
+                    if (!response.IsValid)
+                        throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
+
+                    this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Storage, response.Version));
                 }
             }
             return entity;
@@ -190,6 +187,9 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity Update<TEntity>(TEntity entity, long? version = null)
             where TEntity : class
         {
+            if (!this.TranInProgress)
+                return entity;
+
             var id = this.Client.Infer.Id(entity);
             if (string.IsNullOrWhiteSpace(id))
                 throw new BusinessPersistentException("Impossible to update the given instance because the identifier is missing.", "Update");
@@ -199,8 +199,6 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             if (!response.IsValid)
                 throw new BusinessPersistentException("Error on updating the given instance.", "Update");
-
-            //this.UpdateMetadata<TEntity>(id, entity, response.Version);
 
             return entity;
         }
