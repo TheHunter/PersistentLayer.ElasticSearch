@@ -103,7 +103,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var response = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(this.Index)
                 .From(0)
-                .Take(20)   // numero di default.
+                .Take(20)   // default qty.
                 );
 
             var hits =

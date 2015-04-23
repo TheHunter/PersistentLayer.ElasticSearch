@@ -64,16 +64,6 @@ namespace PersistentLayer.ElasticSearch.Resolvers
             return contract;
         }
 
-        //protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
-        //{
-        //    if (type == typeof(Attachment))
-        //        Console.WriteLine();
-
-        //    var properties = base.CreateProperties(type, memberSerialization);
-        //    return properties;
-        //}
-
-
         protected override List<MemberInfo> GetSerializableMembers(Type objectType)
         {
             var origMembers = base.GetSerializableMembers(objectType);
