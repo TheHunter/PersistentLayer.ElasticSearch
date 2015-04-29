@@ -14,6 +14,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Indicates instances has added by insert operations.
         /// </summary>
         Newone,
+
         /// <summary>
         /// Indicates instances was loaded by load operations.
         /// </summary>

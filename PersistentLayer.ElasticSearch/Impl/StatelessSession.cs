@@ -71,7 +71,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             {
                 var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index));
                 if (!response.Created)
-                    throw new BusinessPersistentException("Error on saving the given instance", "MakePersistent");
+                    throw new BusinessPersistentException("Error on saving the given instance", "Save");
                 return entity;
             }
             else
@@ -80,7 +80,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                     this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id).Index(this.Index));
 
                 if (!response.IsValid)
-                    throw new BusinessPersistentException("Error on updating the given instance.", "MakePersistent");
+                    throw new BusinessPersistentException("Error on updating the given instance.", "Save");
             }
             return entity;
         }
@@ -125,11 +125,11 @@ namespace PersistentLayer.ElasticSearch.Impl
             return list;
         }
 
-        public TEntity MakePersistent<TEntity>(TEntity entity, object id) where TEntity : class
+        public TEntity Save<TEntity>(TEntity entity, object id) where TEntity : class
         {
             var response = this.Client.Update<TEntity>(descriptor => descriptor.Doc(entity).Id(id.ToString()));
             if (!response.IsValid)
-                throw new BusinessPersistentException("Error on updating the given instance", "MakePersistent");
+                throw new BusinessPersistentException("Error on updating the given instance", "Save");
 
             return entity;
         }

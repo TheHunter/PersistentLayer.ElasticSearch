@@ -24,7 +24,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <param name="origin">The origin.</param>
         /// <param name="version">The version.</param>
         public MetadataInfo(string id, string indexName, string typeName,
-            object instance, Func<object, string> serializer, OriginContext origin, string version = null)
+            object instance, Func<object, string> serializer, OriginContext origin, string version)
         {
             this.serializer = serializer;
 
@@ -35,7 +35,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.OriginalStatus = serializer.Invoke(instance);
             this.Origin = origin;
             this.InstanceType = instance.GetType();
-            this.Version = version == null || version.Trim().Equals(string.Empty) ? "0" : version;
+            this.Version = version;
         }
 
         /// <summary>
@@ -79,7 +79,8 @@ namespace PersistentLayer.ElasticSearch.Metadata
         public string OriginalStatus { get; private set; }
 
         /// <summary>
-        /// Gets the origin of the current instance.
+        /// Gets the origin of the current instance (used for transactions, rollback or commit)
+        /// <remarks>If the origin is New so rollback operation must be deleted, otherwise updated on commit.</remarks>
         /// </summary>
         /// <value>
         /// The origin.
@@ -116,7 +117,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Updates the status.
         /// </summary>
         /// <param name="instance">The instance.</param>
-        /// <param name="version">The version.</param>
         /// <exception cref="System.ArgumentException">The given instance cannot be replace to actual statement becuase its type is not compatible.;instance</exception>
         public void UpdateStatus(object instance)
         {

@@ -58,6 +58,8 @@
   <ItemGroup>
     <Compile Include="Cache\IMetadataCache.cs" />
     <Compile Include="Cache\MetadataCache.cs" />
+    <Compile Include="Exceptions\DuplicatedInstanceException.cs" />
+    <Compile Include="Extensions\IdResolverExtension.cs" />
     <Compile Include="IElasticSession.cs" />
     <Compile Include="Impl\EsTransactionProvider.cs" />
     <Compile Include="Impl\EsRootPagedDAO.cs" />
