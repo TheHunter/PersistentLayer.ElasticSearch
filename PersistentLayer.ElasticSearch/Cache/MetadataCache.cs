@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Nest.Resolvers;
 using PersistentLayer.ElasticSearch.Metadata;
 
 namespace PersistentLayer.ElasticSearch.Cache
@@ -10,6 +11,7 @@ namespace PersistentLayer.ElasticSearch.Cache
     public class MetadataCache
         : IMetadataCache, IDisposable
     {
+        private readonly IdResolver idResolver = new IdResolver();
         private readonly HashSet<IMetadataInfo> localCache;
         private readonly Dictionary<Type, List<IMetadataInfo>> metadataToDelete;
 
@@ -30,7 +32,8 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         public bool Cached(Type instanceType, params string[] ids)
         {
-            return ids.All(s => this.localCache.Any(info => info.Id.Equals(s, StringComparison.InvariantCulture) && info.InstanceType == instanceType));
+            return ids.All(s => this.localCache.Any(info => info.Id.Equals(s, StringComparison.InvariantCulture)
+                && info.InstanceType == instanceType));
         }
 
         public bool Cached(params object[] instances)
@@ -66,6 +69,9 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         public bool Detach<TEntity>(params string[] id) where TEntity : class
         {
+            // When the OriginContext is NEW It's needed to delete the instance from repository
+            // otherwise (so if its value is Storage) the metadata is removed from this local cache..
+
             throw new NotImplementedException();
         }
 

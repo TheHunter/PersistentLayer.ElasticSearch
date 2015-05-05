@@ -79,11 +79,5 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </summary>
         /// <returns></returns>
         bool HasChanged();
-
-        /// <summary>
-        /// Updates the status.
-        /// </summary>
-        /// <param name="instance">The instance.</param>
-        void UpdateStatus(object instance);
     }
 }

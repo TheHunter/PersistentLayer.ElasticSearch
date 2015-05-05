@@ -85,6 +85,21 @@ namespace PersistentLayer.ElasticSearch.Impl
             return entity;
         }
 
+        public TEntity Update<TEntity>(TEntity entity, string version = null) where TEntity : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public TEntity Update<TEntity>(TEntity entity, object id, string version = null) where TEntity : class
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerable<TEntity> ISession.MakePersistent<TEntity>(params TEntity[] entities)
+        {
+            throw new NotImplementedException();
+        }
+
         public TEntity Update<TEntity>(TEntity entity, long? version = null)
             where TEntity : class
         {

@@ -17,8 +17,6 @@ namespace PersistentLayer.ElasticSearch.Impl
     public class ElasticSession
         : ISession
     {
-        // DOVRA' essere utilizzato dalla cache che gestisce tutti i metadati.
-        //private readonly IdResolver idResolver = new IdResolver();
         private readonly Func<bool> tranInProgress;
         private readonly JsonSerializerSettings jsonSettings;
         private readonly Func<object, string> serializer;
@@ -60,7 +58,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
             if (this.TranInProgress)
-                this.localCache.Attach(new MetadataInfo(request.Id, request.Index, request.Type, request.Source, this.serializer, OriginContext.Storage, request.Version));
+                this.localCache.Attach(request.AsMetadata(this.serializer, OriginContext.Storage));
 
             return request.Source;
         }
@@ -88,16 +86,11 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
 
             var response = this.Client.GetMany<TEntity>(idsToHit, this.Index).Where(n => n.Found).ToArray();
-            list.AddRange(response.Select(n => n.Source));
 
-            if (this.TranInProgress)
+            foreach (var multiGetHit in response)
             {
-                foreach (var multiGetHit in response)
-                {
-                    this.localCache.Attach(
-                        new MetadataInfo(multiGetHit.Id, multiGetHit.Index, multiGetHit.Type, multiGetHit.Source, this.serializer, OriginContext.Storage,
-                            multiGetHit.Version));
-                }
+                this.localCache.Attach(multiGetHit.AsMetadata(this.serializer, OriginContext.Storage));
+                list.Add(multiGetHit.Source);
             }
 
             return list;
@@ -107,21 +100,31 @@ namespace PersistentLayer.ElasticSearch.Impl
             where TEntity : class
         {
             var response = this.Client.Search<TEntity>(descriptor => descriptor
+                .Version()
                 .Index(this.Index)
                 .From(0)
                 .Take(20));
 
-            var hits =
-                    response.Hits.Select(
-                        n =>
-                            new MetadataInfo(n.Id, n.Index, n.Type, n.Source, this.serializer, OriginContext.Storage,
-                                n.Version) as IMetadataInfo).ToArray();
-
-            if (this.TranInProgress)
+            var docs = new List<TEntity>();
+            foreach (var hit in response.Hits)
             {
-                this.localCache.Attach(hits);
+
+                var metadata = this.localCache.MetadataExpression(infos =>
+                infos.FirstOrDefault(info => info.Id == hit.Id
+                    && info.IndexName.Equals(this.Index)
+                    && info.TypeName.Equals(hit.Type)));
+
+                if (metadata == null)
+                {
+                    docs.Add(hit.Source);
+                    this.localCache.Attach(hit.AsMetadata(this.serializer, OriginContext.Storage));
+                }
+                else
+                {
+                    docs.Add(metadata.CurrentStatus as dynamic);
+                }
             }
-            return response.Hits.Select(n => n.Source).ToArray();
+            return docs;
         }
 
         public IEnumerable<TEntity> FindAll<TEntity>(Expression<Func<TEntity, bool>> predicate)
@@ -165,8 +168,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "Save");
 
-                this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer, OriginContext.Newone,
-                    response.Version));
+                this.localCache.Attach(response.AsMetadata(this.serializer, OriginContext.Newone, entity));
+
                 return entity;
             }
 
@@ -217,15 +220,11 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
             else
             {
-                var request = this.Client.Get<TEntity>(id, this.Index);
-                if (!request.IsValid)
-                    throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
+                var response = this.Client.Get<TEntity>(id, this.Index);
+                if (!response.Found)
+                    throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
-                var metadata = new MetadataInfo(request.Id, request.Index, request.Type, request.Source, this.serializer,
-                    OriginContext.Storage, version ?? request.Version);
-
-                this.localCache.Attach(metadata);
-                metadata.UpdateStatus(entity);
+                this.localCache.Attach(response.AsMetadata(this.serializer, OriginContext.Storage));
             }
         }
 
@@ -242,9 +241,6 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity Save<TEntity>(TEntity entity, object id)
             where TEntity : class
         {
-            // occorre verificare sempre se id è compatibile con la Id della proprietà
-            // se e solo se il documento possiede una proprietà associata all'Id del docuemnto.
-
             if (!this.TranInProgress)
                 return entity;
 
@@ -266,8 +262,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.localCache.Attach(new MetadataInfo(response.Id, response.Index, response.Type, entity, this.serializer,
-                    OriginContext.Newone, response.Version));
+                this.localCache.Attach(response.AsMetadata(this.serializer, OriginContext.Newone, entity));
             }
             
             return entity;
@@ -276,13 +271,12 @@ namespace PersistentLayer.ElasticSearch.Impl
         public void MakeTransient<TEntity>(params TEntity[] entities)
             where TEntity : class
         {
-            /*
-            prima occorre cancellare i dati dalla cache, poi successivamente occorre metterli in batch per la cancellazione...
-            */
+            if (!this.TranInProgress)
+                return;
 
-            var response = this.Client.Bulk(descriptor =>
-                descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor
-                    .Index(this.Index).Document(entity)));
+            //var response = this.Client.Bulk(descriptor =>
+            //    descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor
+            //        .Index(this.Index).Document(entity)));
 
             this.localCache.Detach(entities);
         }
@@ -290,16 +284,23 @@ namespace PersistentLayer.ElasticSearch.Impl
         public void MakeTransient<TEntity>(params object[] ids)
             where TEntity : class
         {
-            var local = ids.Select(n => n.ToString());
-            var response = this.Client.Bulk(descriptor => 
-                descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s)));
+            if (!this.TranInProgress)
+                return;
 
+            var local = ids.Select(n => n.ToString());
+            //var response = this.Client.Bulk(descriptor => 
+            //    descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s)));
+
+            // on detach occorre mettere in batch la richiesta di cancellazione dell'istanza associata all'id indicato nel parametro..
             this.localCache.Detach<TEntity>(local.ToArray());
         }
 
         public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate)
             where TEntity : class
         {
+            //if (!this.TranInProgress)
+            //    return;
+
             throw new NotImplementedException();
         }
 

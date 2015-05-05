@@ -2,16 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Nest;
+using Nest.Resolvers;
 
 namespace PersistentLayer.ElasticSearch.Metadata
 {
     /// <summary>
-    /// Metadata
+    /// Metadata for storing entity info.
     /// </summary>
     public class MetadataInfo
         : IMetadataInfo
     {
-        private readonly Func<object, string> serializer;
+        private Func<object, string> serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MetadataInfo"/> class.
@@ -19,24 +21,87 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <param name="id">The identifier.</param>
         /// <param name="indexName">Name of the index.</param>
         /// <param name="typeName">Name of the type.</param>
-        /// <param name="instance">The instance.</param>
+        /// <param name="currentStatus">The current status.</param>
         /// <param name="serializer">The serializer.</param>
         /// <param name="origin">The origin.</param>
         /// <param name="version">The version.</param>
         public MetadataInfo(string id, string indexName, string typeName,
-            object instance, Func<object, string> serializer, OriginContext origin, string version)
+            object currentStatus, Func<object, string> serializer, OriginContext origin, string version)
         {
-            this.serializer = serializer;
+            this.OnInit(id, indexName, typeName, currentStatus, currentStatus, serializer, origin, version);
+        }
+
+        public MetadataInfo(string id, string indexName, string typeName,
+            object originalStatus, object currentStatus, Func<object, string> serializer, OriginContext origin, string version)
+        {
+            if (originalStatus.GetType() != currentStatus.GetType())
+                throw new ArgumentException("the current status has a different type than original status, verify its type before applying a current status.");
+
+            this.OnInit(id, indexName, typeName, originalStatus, currentStatus, serializer, origin, version);
+        }
+
+        /// <summary>
+        /// Called when [initialize].
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="indexName">Name of the index.</param>
+        /// <param name="typeName">Name of the type.</param>
+        /// <param name="originalStatus">The original status.</param>
+        /// <param name="currentStatus">The current status.</param>
+        /// <param name="serializer">The serializer.</param>
+        /// <param name="origin">The origin.</param>
+        /// <param name="version">The version.</param>
+        /// <exception cref="System.ArgumentException">
+        /// The identifier cannot be null or empty.;id
+        /// or
+        /// The indexName cannot be null or empty.;indexName
+        /// or
+        /// The typeName cannot be null or empty.;typeName
+        /// or
+        /// The version cannot be null or empty.;version
+        /// </exception>
+        /// <exception cref="System.ArgumentNullException">
+        /// originalStatus;The current status cannot be null.
+        /// or
+        /// currentStatus;The current status cannot be null.
+        /// or
+        /// serializer;The serializer cannot be null.
+        /// </exception>
+        private void OnInit(string id, string indexName, string typeName,
+            object originalStatus, object currentStatus, Func<object, string> serializer, OriginContext origin, string version)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("The identifier cannot be null or empty.", "id");
+
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("The indexName cannot be null or empty.", "indexName");
+
+            if (string.IsNullOrWhiteSpace(typeName))
+                throw new ArgumentException("The typeName cannot be null or empty.", "typeName");
+
+            if (originalStatus == null)
+                throw new ArgumentNullException("originalStatus", "The current status cannot be null.");
+
+            if (currentStatus == null)
+                throw new ArgumentNullException("currentStatus", "The current status cannot be null.");
+
+            if (serializer == null)
+                throw new ArgumentNullException("serializer", "The serializer cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(version))
+                throw new ArgumentException("The version cannot be null or empty.", "version");
 
             this.Id = id;
             this.IndexName = indexName;
             this.TypeName = typeName;
-            this.CurrentStatus = instance;
-            this.OriginalStatus = serializer.Invoke(instance);
+            this.serializer = serializer;
+            this.CurrentStatus = currentStatus;
+            this.OriginalStatus = serializer.Invoke(originalStatus); // It's needed to set id property if this one exists..
             this.Origin = origin;
-            this.InstanceType = instance.GetType();
+            this.InstanceType = currentStatus.GetType();
             this.Version = version;
         }
+
 
         /// <summary>
         /// Gets the identifier of current instance.
@@ -114,20 +179,12 @@ namespace PersistentLayer.ElasticSearch.Metadata
         }
 
         /// <summary>
-        /// Updates the status.
+        /// Determines whether the specified <see cref="System.Object" />, is equal to this instance.
         /// </summary>
-        /// <param name="instance">The instance.</param>
-        /// <exception cref="System.ArgumentException">The given instance cannot be replace to actual statement becuase its type is not compatible.;instance</exception>
-        public void UpdateStatus(object instance)
-        {
-            if (!this.InstanceType.IsInstanceOfType(instance))
-                throw new ArgumentException("The given instance cannot be replace to actual statement becuase its type is not compatible.", "instance");
-
-            this.OriginalStatus = this.serializer.Invoke(this.CurrentStatus);
-            this.CurrentStatus = instance; //using a merge It could be better...
-            this.InstanceType = instance.GetType();            
-        }
-
+        /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance; otherwise, <c>false</c>.
+        /// </returns>
         public override bool Equals(object obj)
         {
             if (obj == null)
@@ -139,11 +196,23 @@ namespace PersistentLayer.ElasticSearch.Metadata
             return false;
         }
 
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
+        /// </returns>
         public override int GetHashCode()
         {
             return this.Id.GetHashCode() - (this.IndexName.GetHashCode() + this.TypeName.GetHashCode());
         }
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             return string.Format("Id: {0}, Index: {1}, TypeName: {2}, Version: {3}", this.Id, this.IndexName, this.TypeName, this.Version);
