@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Cache\IMetadataCache.cs" />
     <Compile Include="Cache\MetadataCache.cs" />
+    <Compile Include="Exceptions\BulkOperationException.cs" />
     <Compile Include="Exceptions\DuplicatedInstanceException.cs" />
     <Compile Include="Extensions\IdResolverExtension.cs" />
     <Compile Include="Extensions\MetadataExtension.cs" />
@@ -69,7 +70,9 @@
     <Compile Include="Impl\StatelessSession.cs" />
     <Compile Include="IPersistenceResult.cs" />
     <Compile Include="ISession.cs" />
+    <Compile Include="Metadata\DocOperationResponse.cs" />
     <Compile Include="Metadata\IMetadataInfo.cs" />
+    <Compile Include="Metadata\MetadataComparer.cs" />
     <Compile Include="Metadata\MetadataInfo.cs" />
     <Compile Include="Metadata\OriginContext.cs" />
     <Compile Include="Metadata\PersistenceStatus.cs" />

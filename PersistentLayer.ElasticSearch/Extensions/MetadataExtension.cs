@@ -13,6 +13,25 @@ namespace PersistentLayer.ElasticSearch.Extensions
     public static class MetadataExtension
     {
         /// <summary>
+        /// To the document response.
+        /// </summary>
+        /// <param name="document">The document.</param>
+        /// <returns></returns>
+        public static DocOperationResponse ToDocumentResponse(this BulkOperationResponseItem document)
+        {
+            return new DocOperationResponse
+            {
+                Error = document.Error,
+                Id = document.Id,
+                Index = document.Index,
+                Operation = document.Operation,
+                Status = document.Status,
+                Type = document.Type,
+                Version = document.Version
+            };
+        }
+
+        /// <summary>
         /// To the metadata.
         /// </summary>
         /// <typeparam name="TEntity">The type of the entity.</typeparam>
