@@ -16,9 +16,12 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             this.Index = indexName;
             this.Client = client;
+            this.Id = Guid.NewGuid();
         }
 
         protected ElasticClient Client { get; set; }
+
+        public Guid Id { get; private set; }
 
         public string Index { get; private set; }
 

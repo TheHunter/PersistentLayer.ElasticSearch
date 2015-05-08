@@ -24,6 +24,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, ElasticClient client)
         {
+            this.Id = Guid.NewGuid();
             this.Index = indexName;
             this.tranInProgress = tranInProgress;
             this.jsonSettings = jsonSettings;
@@ -31,6 +32,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
             this.localCache = null;
         }
+
+        public Guid Id { get; private set; }
 
         public string Index { get; private set; }
 
@@ -307,12 +310,14 @@ namespace PersistentLayer.ElasticSearch.Impl
         public TEntity RefreshState<TEntity>(TEntity entity)
             where TEntity : class
         {
+            
             var response = this.Client.Get<TEntity>(descriptor => descriptor.IdFrom(entity));
             if (!response.Found)
                 throw new ExecutionQueryException("The given instance wasn't found on storage.", "MakeTransient");
 
-            //this.UpdateMetadata<TEntity>(response.Id, entity, response.Version);
-            return response.Source;
+            // qui occorre fare un merge con l'istanza persistente presente nello storage
+            // nel caso non esistesse tale documento, allora bisogna inserirlo dentro della cache locale.
+            return entity;
         }
 
         public IPagedResult<TEntity> GetPagedResult<TEntity>(int startIndex, int pageSize, Expression<Func<TEntity, bool>> predicate) where TEntity : class

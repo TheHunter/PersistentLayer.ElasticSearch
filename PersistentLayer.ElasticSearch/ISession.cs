@@ -7,6 +7,7 @@ namespace PersistentLayer.ElasticSearch
 {
     public interface ISession
     {
+        Guid Id { get; }
 
         string Index { get; }
 

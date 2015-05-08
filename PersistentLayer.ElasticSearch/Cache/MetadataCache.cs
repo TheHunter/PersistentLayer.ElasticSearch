@@ -137,10 +137,8 @@ namespace PersistentLayer.ElasticSearch.Cache
                     throw new BulkOperationException("There are problems when some instances were processed ", response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
                 }
             }
-
             return true;
         }
-
 
         public bool Detach<TEntity>(params TEntity[] instances) where TEntity : class
         {
@@ -153,17 +151,39 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
 
-            throw new NotImplementedException();
+            IBulkRequest request = new BulkRequest();
+            var toRemove = this.localCache.Where(exp.Compile())
+                .ToList();
+
+
+            return true;
         }
 
         public void Clear()
         {
             this.ThrowIfDisposed();
-            // cancello le righe che hanno una origine NEW
-            // quindi devono essre cancellate dallo storage.
 
-            
+            Func<IMetadataInfo, bool> exp = info =>
+                info.Origin == OriginContext.Newone
+                && info.IndexName.Equals(this.Index, StringComparison.InvariantCultureIgnoreCase);
 
+            IBulkRequest request = new BulkRequest();
+            var toRemove = this.localCache.Where(exp)
+                .ToList();
+
+            foreach (var metadata in toRemove)
+            {
+                this.localCache.Remove(metadata);
+                request.Operations.Add(
+                            new BulkDeleteOperation<object>(metadata.Id)
+                            {
+                                Index = metadata.IndexName,
+                                Type = metadata.TypeName,
+                                Version = metadata.Version
+                            });
+            }
+            // I make a bulk delete for decrease response latency.
+            this.client.Bulk(request);
             this.localCache.Clear();
         }
 
