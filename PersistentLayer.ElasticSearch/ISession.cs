@@ -7,10 +7,6 @@ namespace PersistentLayer.ElasticSearch
 {
     public interface ISession
     {
-        Guid Id { get; }
-
-        string Index { get; }
-
         TEntity FindBy<TEntity>(object id)
             where TEntity : class;
 
@@ -56,7 +52,7 @@ namespace PersistentLayer.ElasticSearch
         void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate)
             where TEntity : class;
 
-        TEntity RefreshState<TEntity>(TEntity entity)
+        TEntity RefreshState<TEntity>(TEntity entity, string id = null)
             where TEntity : class;
 
         IPagedResult<TEntity> GetPagedResult<TEntity>(int startIndex, int pageSize, Expression<Func<TEntity, bool>> predicate)

@@ -79,5 +79,11 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </summary>
         /// <returns></returns>
         bool HasChanged();
+
+        /// <summary>
+        /// Updates the specified metadata.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        void Update(IMetadataInfo metadata);
     }
 }

@@ -24,6 +24,8 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         bool Attach(params IMetadataInfo[] metadata);
 
+        bool AttachOrUpdate(params IMetadataInfo[] metadata);
+
         bool Detach<TEntity>(params string[] ids)
             where TEntity: class;
 

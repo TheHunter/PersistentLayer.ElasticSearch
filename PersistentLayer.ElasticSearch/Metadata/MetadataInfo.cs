@@ -178,6 +178,16 @@ namespace PersistentLayer.ElasticSearch.Metadata
             return !currentStatus.Equals(this.OriginalStatus, StringComparison.CurrentCulture);
         }
 
+        /// <summary>
+        /// Updates the specified metadata.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public void Update(IMetadataInfo metadata)
+        {
+            throw new NotImplementedException();
+        }
+
         //public override bool Equals(object obj)
         //{
         //    if (obj == null)

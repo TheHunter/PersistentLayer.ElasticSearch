@@ -171,7 +171,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
-        public TEntity RefreshState<TEntity>(TEntity entity) where TEntity : class
+        public TEntity RefreshState<TEntity>(TEntity entity, string id = null) where TEntity : class
         {
             throw new NotImplementedException();
         }

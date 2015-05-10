@@ -15,7 +15,7 @@ using PersistentLayer.Exceptions;
 namespace PersistentLayer.ElasticSearch.Impl
 {
     public class ElasticSession
-        : ISession
+        : IElasticSession
     {
         private readonly Func<bool> tranInProgress;
         private readonly JsonSerializerSettings jsonSettings;
@@ -30,7 +30,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.jsonSettings = jsonSettings;
             this.Client = client;
             this.serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            this.localCache = null;
+            this.localCache = new MetadataCache(this.Index, client);
         }
 
         public Guid Id { get; private set; }
@@ -42,7 +42,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             get { return this.tranInProgress.Invoke(); }
         }
 
-        protected ElasticClient Client { get; set; }
+        public IElasticClient Client { get; private set; }
 
         public TEntity FindBy<TEntity>(object id)
             where TEntity : class
@@ -79,13 +79,9 @@ namespace PersistentLayer.ElasticSearch.Impl
             {
                 var current = metadata.FirstOrDefault(n => n.Id.Equals(id));
                 if (current != null)
-                {
                     list.Add(current.CurrentStatus as dynamic);
-                }
                 else
-                {
                     idsToHit.Add(id);
-                }
             }
 
             var response = this.Client.GetMany<TEntity>(idsToHit, this.Index).Where(n => n.Found).ToArray();
@@ -167,7 +163,8 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             if (string.IsNullOrWhiteSpace(id))
             {
-                var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index));
+                /* da aggiungere la proprieta dinamica */
+                var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index).Id(id));
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "Save");
 
@@ -277,10 +274,6 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return;
 
-            //var response = this.Client.Bulk(descriptor =>
-            //    descriptor.DeleteMany(entities, (deleteDescriptor, entity) => deleteDescriptor
-            //        .Index(this.Index).Document(entity)));
-
             this.localCache.Detach(entities);
         }
 
@@ -291,10 +284,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return;
 
             var local = ids.Select(n => n.ToString());
-            //var response = this.Client.Bulk(descriptor => 
-            //    descriptor.DeleteMany(local, (deleteDescriptor, s) => deleteDescriptor.Index(this.Index).Id(s)));
-
-            // on detach occorre mettere in batch la richiesta di cancellazione dell'istanza associata all'id indicato nel parametro..
             this.localCache.Detach<TEntity>(local.ToArray());
         }
 
@@ -307,16 +296,18 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
-        public TEntity RefreshState<TEntity>(TEntity entity)
+        public TEntity RefreshState<TEntity>(TEntity entity, string id = null)
             where TEntity : class
         {
-            
-            var response = this.Client.Get<TEntity>(descriptor => descriptor.IdFrom(entity));
+            id = id ?? this.Client.Infer.Id(entity);
+            var response = this.Client.Get<TEntity>(descriptor => descriptor.Id(id));
             if (!response.Found)
                 throw new ExecutionQueryException("The given instance wasn't found on storage.", "MakeTransient");
 
-            // qui occorre fare un merge con l'istanza persistente presente nello storage
-            // nel caso non esistesse tale documento, allora bisogna inserirlo dentro della cache locale.
+            if (!this.TranInProgress)
+                return response.Source;
+
+            this.localCache.AttachOrUpdate(response.AsMetadata(this.serializer, OriginContext.Storage));
             return entity;
         }
 
