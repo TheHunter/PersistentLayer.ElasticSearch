@@ -39,10 +39,16 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         public bool Cached(Type instanceType, params string[] ids)
         {
+            var typeName = this.client.Infer.IndexName(instanceType);
+            return this.Cached(typeName, ids);
+        }
+
+        public bool Cached(string typeName, params string[] ids)
+        {
             this.ThrowIfDisposed();
 
-            var typeName = this.client.Infer.IndexName(instanceType);
-            return ids.All(s => this.localCache.Any(info =>
+            var toInspect = this.GetCache().ToList();
+            return ids.All(s => toInspect.Any(info =>
                 info.Id.Equals(s, StringComparison.InvariantCulture)
                 && info.TypeName.Equals(typeName, StringComparison.InvariantCulture)));
         }
@@ -51,25 +57,29 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
 
-            return instances.All(instance => this.localCache.Any(info =>
-                this.Index.Equals(info.IndexName, StringComparison.InvariantCulture)
-                && info.CurrentStatus == instance));
+            var inferrer = this.client.Infer;
+            var toInspect = this.GetCache().ToList();
+            return instances.All(instance => toInspect
+                .Any(info => 
+                    info.TypeName.Equals(inferrer.TypeName(instance.GetType()), StringComparison.InvariantCulture)
+                    && info.CurrentStatus == instance));
         }
 
         public IEnumerable<IMetadataInfo> FindMetadata(params object[] instances)
         {
             this.ThrowIfDisposed();
 
-            return this.localCache.Where(info => instances.Any(instance => 
-                this.Index.Equals(info.IndexName, StringComparison.InvariantCulture)
-                && info.CurrentStatus == instance));
+            var toInspect = this.GetCache().ToList();
+            return instances.Select(instance => toInspect.FirstOrDefault(info => info.CurrentStatus == instance))
+                .Where(info => info != null)
+                .ToList();
         }
 
         public IEnumerable<IMetadataInfo> FindMetadata(Expression<Func<IMetadataInfo, bool>> exp)
         {
             this.ThrowIfDisposed();
-            return this.GetCache()
-                .Where(info => exp.Compile().Invoke(info));
+            return this.GetCache(cond: exp.Compile())
+                .ToList();
         }
 
         public TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataInfo>, TResult>> expr)
@@ -127,15 +137,17 @@ namespace PersistentLayer.ElasticSearch.Cache
 
             string indexName = this.Index;
             Func<IMetadataInfo, string, bool> func = (info, id) =>
-                info.Id.Equals(id, StringComparison.InvariantCulture)
-                && info.TypeName.Equals(typeName, StringComparison.InvariantCultureIgnoreCase)
-                && info.IndexName.Equals(indexName, StringComparison.InvariantCultureIgnoreCase);
+                info.Id.Equals(id, StringComparison.InvariantCulture);
+
+            var toInspect = this.GetCache(cond: info => info.TypeName.Equals(typeName, StringComparison.InvariantCultureIgnoreCase)
+                && info.IndexName.Equals(indexName, StringComparison.InvariantCultureIgnoreCase)
+                ).ToList();
 
             IBulkRequest request = new BulkRequest();
 
             foreach (var id in ids)
             {
-                var metadata = this.localCache.SingleOrDefault(info => func.Invoke(info, id));
+                var metadata = toInspect.SingleOrDefault(info => func.Invoke(info, id));
                 if (metadata != null)
                 {
                     if (metadata.Origin == OriginContext.Newone)
@@ -175,57 +187,129 @@ namespace PersistentLayer.ElasticSearch.Cache
             this.ThrowIfDisposed();
 
             IBulkRequest request = new BulkRequest();
-            var toRemove = this.GetCache().Where(exp.Compile())
+            var toRemove = this.GetCache(cond: exp.Compile())
                 .ToList();
 
-            foreach (var metadataInfo in toRemove)
+            foreach (var metadata in toRemove)
             {
-                
+                if (metadata.Origin == OriginContext.Newone)
+                {
+                    request.Operations.Add(
+                        new BulkDeleteOperation<object>(metadata.Id)
+                        {
+                            Index = metadata.IndexName,
+                            Type = metadata.TypeName,
+                            Version = metadata.Version
+                        });
+                }
+                this.localCache.Remove(metadata);
             }
+
+            if (!request.Operations.Any())
+                return true;
+
+            IBulkResponse response = this.client.Bulk(request);
+            if (response.ItemsWithErrors.Any())
+                throw new BulkOperationException("There are problems when some instances were processed ",
+                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
 
             return true;
         }
 
-        public void Clear()
+        public void Clear(string indexName = null)
         {
             this.ThrowIfDisposed();
 
-            Func<IMetadataInfo, bool> exp = info =>
-                info.Origin == OriginContext.Newone
-                && info.IndexName.Equals(this.Index, StringComparison.InvariantCultureIgnoreCase);
-
             IBulkRequest request = new BulkRequest();
-            var toRemove = this.localCache.Where(exp)
+            var toRemove = this.GetCache(indexName)
                 .ToList();
 
             foreach (var metadata in toRemove)
             {
                 this.localCache.Remove(metadata);
-                request.Operations.Add(
-                            new BulkDeleteOperation<object>(metadata.Id)
-                            {
-                                Index = metadata.IndexName,
-                                Type = metadata.TypeName,
-                                Version = metadata.Version
-                            });
+                if (metadata.Origin == OriginContext.Newone)
+                {
+                    request.Operations.Add(
+                        new BulkDeleteOperation<object>(metadata.Id)
+                        {
+                            Index = metadata.IndexName,
+                            Type = metadata.TypeName,
+                            Version = metadata.Version
+                        });
+                }
             }
-            // I make a bulk delete for decrease response latency.
-            this.client.Bulk(request);
-            this.localCache.Clear();
+            
+            IBulkResponse response = this.client.Bulk(request);
+            if (response.ItemsWithErrors.Any())
+                throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
+                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
         }
 
-        private IEnumerable<IMetadataInfo> GetCache(string indexName = null)
+        private void ClearAll()
         {
-            return
-                this.localCache.Where(info => 
-                    (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture));
+            this.ThrowIfDisposed();
+
+            IBulkRequest request = new BulkRequest();
+            var toRemove = this.localCache.Where(info => info.Origin == OriginContext.Newone)
+                .ToList();
+
+            foreach (var metadata in toRemove)
+            {
+                this.localCache.Remove(metadata);
+                if (metadata.Origin == OriginContext.Newone)
+                {
+                    request.Operations.Add(
+                        new BulkDeleteOperation<object>(metadata.Id)
+                        {
+                            Index = metadata.IndexName,
+                            Type = metadata.TypeName,
+                            Version = metadata.Version
+                        });
+                }
+            }
+
+            IBulkResponse response = this.client.Bulk(request);
+            if (response.ItemsWithErrors.Any())
+                throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
+                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
         }
 
+        /// <summary>
+        /// Gets the cache.
+        /// </summary>
+        /// <param name="indexName">Name of the index.</param>
+        /// <param name="cond">The cond.</param>
+        /// <returns></returns>
+        private IEnumerable<IMetadataInfo> GetCache(string indexName = null, Func<IMetadataInfo, bool> cond = null)
+        {
+            return cond == null
+                ? this.localCache.Where(info =>
+                    (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
+                    )
+                : this.localCache.Where(info =>
+                    (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
+                    && cond.Invoke(info)
+                    );
+        }
+
+        public void Flush()
+        {
+            this.ThrowIfDisposed();
+            IBulkRequest request = new BulkRequest();
+
+            // here we have to make persistent all changes about current Index
+            // so, It occurrs to take instances in order to update change, 
+            // and then updating information on local metadata (like version, Id, Origin, this last one is very important)..
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             this.ThrowIfDisposed();
 
-            this.Clear();
+            this.ClearAll();
             this.disposed = true;
         }
 

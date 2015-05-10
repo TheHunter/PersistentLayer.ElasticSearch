@@ -35,7 +35,12 @@ namespace PersistentLayer.ElasticSearch.Exceptions
             this.DocumentResponses = new List<DocOperationResponse>(documentResponses);
         }
 
-
+        /// <summary>
+        /// Gets the document responses.
+        /// </summary>
+        /// <value>
+        /// The document responses.
+        /// </value>
         public IEnumerable<DocOperationResponse> DocumentResponses { get; private set; }
     }
 }

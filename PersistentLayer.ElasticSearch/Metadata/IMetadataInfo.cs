@@ -85,5 +85,11 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </summary>
         /// <param name="metadata">The metadata.</param>
         void Update(IMetadataInfo metadata);
+
+        /// <summary>
+        /// Becomes the persistent the internal metadata, updating the current version.
+        /// </summary>
+        /// <param name="version">The version to update</param>
+        void BecomePersistent(string version);
     }
 }

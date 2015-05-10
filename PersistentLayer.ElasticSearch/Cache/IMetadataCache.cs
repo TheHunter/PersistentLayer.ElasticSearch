@@ -36,6 +36,6 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         bool Detach(Expression<Func<IMetadataInfo, bool>> exp);
 
-        void Clear();
+        void Clear(string indexName = null);
     }
 }

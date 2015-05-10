@@ -188,6 +188,16 @@ namespace PersistentLayer.ElasticSearch.Metadata
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Becomes the persistent the internal metadata, updating the current version.
+        /// </summary>
+        /// <param name="version">The version to update</param>
+        public void BecomePersistent(string version)
+        {
+            this.Origin = OriginContext.Storage;
+            this.Version = version;
+        }
+
         //public override bool Equals(object obj)
         //{
         //    if (obj == null)
