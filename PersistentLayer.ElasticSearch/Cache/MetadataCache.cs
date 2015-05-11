@@ -300,6 +300,35 @@ namespace PersistentLayer.ElasticSearch.Cache
             // here we have to make persistent all changes about current Index
             // so, It occurrs to take instances in order to update change, 
             // and then updating information on local metadata (like version, Id, Origin, this last one is very important)..
+
+            var metadataToPersist = this.GetCache(cond: info => info.HasChanged()).ToList();
+            foreach (var metadata in metadataToPersist)
+            {
+                request.Operations.Add(
+                    new BulkDeleteOperation<object>(metadata.Id)
+                    {
+                        Index = metadata.IndexName,
+                        Type = metadata.TypeName,
+                        Version = metadata.Version
+                    });
+            }
+
+            var response = this.client.Bulk(request);
+            if (response.Errors)
+            {
+                //BulkOperationResponseItem
+                this.Restore(response.Items);
+                throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
+                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
+            }
+            
+            // everything was gone well.. so It's requeried to update metadat with bulk response
+            // so Version and Origin (for new instances).
+        }
+
+        private void Restore(IEnumerable<BulkOperationResponseItem> toRestore)
+        {
+            // here It's requeried to restore instances which are persisted correctly.
         }
 
         /// <summary>
