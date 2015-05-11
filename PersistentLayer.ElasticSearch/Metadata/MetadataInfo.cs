@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using Nest;
 using Nest.Resolvers;
+using PersistentLayer.ElasticSearch.Cache;
 
 namespace PersistentLayer.ElasticSearch.Metadata
 {
@@ -95,13 +97,13 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.IndexName = indexName;
             this.TypeName = typeName;
             this.serializer = serializer;
-            this.CurrentStatus = currentStatus;
-            this.OriginalStatus = serializer.Invoke(originalStatus); // It's needed to set id property if this one exists..
+            this.Instance = currentStatus;
+            //this.PreviousStatus = serializer.Invoke(originalStatus); // It's needed to set id property if this one exists..
+
             this.Origin = origin;
             this.InstanceType = currentStatus.GetType();
             this.Version = version;
         }
-
 
         /// <summary>
         /// Gets the identifier of current instance.
@@ -133,7 +135,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <value>
         /// The current status.
         /// </value>
-        public object CurrentStatus { get; private set; }
+        public object Instance { get; private set; }
 
         /// <summary>
         /// Gets the previous status rappresented in json format.
@@ -141,7 +143,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <value>
         /// The previous status.
         /// </value>
-        public string OriginalStatus { get; private set; }
+        public IMetadata PreviousStatus { get; private set; }
 
         /// <summary>
         /// Gets the origin of the current instance (used for transactions, rollback or commit)
@@ -168,52 +170,40 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </value>
         public string Version { get; private set; }
 
-        /// <summary>
-        /// Determines whether this instance has changed.
-        /// </summary>
-        /// <returns></returns>
+        
         public bool HasChanged()
         {
-            string currentStatus = this.serializer.Invoke(this.CurrentStatus);
-            return !currentStatus.Equals(this.OriginalStatus, StringComparison.CurrentCulture);
+            string currentStatus = this.serializer.Invoke(this.Instance);
+            string prevstatus = this.serializer.Invoke(this.PreviousStatus.Instance);
+            return !currentStatus.Equals(prevstatus, StringComparison.InvariantCulture);
         }
 
         /// <summary>
         /// Updates the specified metadata.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public void Update(IMetadataInfo metadata)
+        /// <param name="isPersistent">if set to <c>true</c> [is persistent].</param>
+        public void Update(IMetadataInfo metadata, bool isPersistent = false)
         {
-            throw new NotImplementedException();
+            this.Id = metadata.Id;
+            this.Version = metadata.Version;
+            this.Origin = isPersistent ? OriginContext.Storage : OriginContext.Newone;
         }
 
         /// <summary>
-        /// Becomes the persistent the internal metadata, updating the current version.
+        /// Restores the specified version.
         /// </summary>
-        /// <param name="version">The version to update</param>
-        public void BecomePersistent(string version)
+        /// <param name="version">The version.</param>
+        public void Restore(string version = null)
         {
-            this.Origin = OriginContext.Storage;
-            this.Version = version;
+            var prev = this.PreviousStatus;
+            this.PreviousStatus = null;
+
+            this.Instance = prev.Instance;  // qui occorre fare un merge... 
+            
+            if (version != null)
+                this.Version = version;
         }
-
-        //public override bool Equals(object obj)
-        //{
-        //    if (obj == null)
-        //        return false;
-
-        //    if (this.GetType() == obj.GetType())
-        //        return this.GetHashCode() == obj.GetHashCode();
-
-        //    return false;
-        //}
-
-        
-        //public override int GetHashCode()
-        //{
-        //    return this.Id.GetHashCode() - (this.IndexName.GetHashCode() + this.TypeName.GetHashCode());
-        //}
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

@@ -20,7 +20,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly Func<bool> tranInProgress;
         private readonly JsonSerializerSettings jsonSettings;
         private readonly Func<object, string> serializer;
-        private readonly IMetadataCache localCache;
+        private readonly MetadataCache localCache;
 
         public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, ElasticClient client)
         {
@@ -54,7 +54,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                     && info.TypeName.Equals(typeName)));
 
             if (metadata != null)
-                return metadata.CurrentStatus as dynamic;
+                return metadata.Instance as dynamic;
 
             var request = this.Client.Get<TEntity>(id.ToString(), this.Index);
             if (!request.IsValid)
@@ -79,7 +79,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             {
                 var current = metadata.FirstOrDefault(n => n.Id.Equals(id));
                 if (current != null)
-                    list.Add(current.CurrentStatus as dynamic);
+                    list.Add(current.Instance as dynamic);
                 else
                     idsToHit.Add(id);
             }
@@ -120,7 +120,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 }
                 else
                 {
-                    docs.Add(metadata.CurrentStatus as dynamic);
+                    docs.Add(metadata.Instance as dynamic);
                 }
             }
             return docs;
@@ -215,7 +215,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (cached != null)
             {
                 // an error because the given instance shouldn't be present twice in the same session context.
-                if (cached.CurrentStatus != entity)
+                if (cached.Instance != entity)
                     throw new DuplicatedInstanceException(string.Format("Impossible to attach the given instance because is already present into session cache, id: {0}, index: {1}", cached.Id, cached.IndexName));
             }
             else
@@ -249,7 +249,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             if (cached != null)
             {
-                if (cached.CurrentStatus != entity)
+                if (cached.Instance != entity)
                     throw new DuplicatedInstanceException(string.Format("Impossible to attach the given instance because is already present into session cache, id: {0}, index: {1}", cached.Id, cached.IndexName));
             }
             else
@@ -365,9 +365,11 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public void Flush()
         {
-            throw new NotImplementedException();
+            if (!this.TranInProgress)
+                return;
+            this.localCache.Flush();
         }
-
+        
         public ISession ChildSession()
         {
             throw new NotImplementedException();
