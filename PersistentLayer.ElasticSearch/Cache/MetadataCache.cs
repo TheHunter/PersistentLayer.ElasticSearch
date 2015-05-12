@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Nest;
-using Nest.Resolvers;
 using PersistentLayer.ElasticSearch.Exceptions;
 using PersistentLayer.ElasticSearch.Extensions;
 using PersistentLayer.ElasticSearch.Metadata;
@@ -93,7 +92,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
 
-            bool ret = true;
+            var ret = true;
             metadata.All(info =>
             {
                 ret = ret && this.localCache.Add(info);
