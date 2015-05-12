@@ -13,9 +13,10 @@ namespace PersistentLayer.ElasticSearch.Metadata
     /// Metadata for storing entity info.
     /// </summary>
     public class MetadataInfo
-        : IMetadataInfo
+        : Metadata, IMetadataInfo
     {
-        private Func<object, string> serializer;
+        //private Func<object, string> serializer;
+        private MetadataEvaluator evaluator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MetadataInfo"/> class.
@@ -24,118 +25,57 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <param name="indexName">Name of the index.</param>
         /// <param name="typeName">Name of the type.</param>
         /// <param name="currentStatus">The current status.</param>
-        /// <param name="serializer">The serializer.</param>
+        /// <param name="evaluator">The evaluator.</param>
         /// <param name="origin">The origin.</param>
         /// <param name="version">The version.</param>
         public MetadataInfo(string id, string indexName, string typeName,
-            object currentStatus, Func<object, string> serializer, OriginContext origin, string version)
+            object currentStatus, MetadataEvaluator evaluator, OriginContext origin, string version)
+            : base(id, indexName, typeName, currentStatus, currentStatus, version)
         {
-            this.OnInit(id, indexName, typeName, currentStatus, currentStatus, serializer, origin, version);
-        }
-
-        public MetadataInfo(string id, string indexName, string typeName,
-            object originalStatus, object currentStatus, Func<object, string> serializer, OriginContext origin, string version)
-        {
-            if (originalStatus.GetType() != currentStatus.GetType())
-                throw new ArgumentException("the current status has a different type than original status, verify its type before applying a current status.");
-
-            this.OnInit(id, indexName, typeName, originalStatus, currentStatus, serializer, origin, version);
+            var originalStatus = Activator.CreateInstance(this.InstanceType, true);
+            this.OnInit(evaluator, originalStatus, origin);
         }
 
         /// <summary>
-        /// Called when [initialize].
+        /// Initializes a new instance of the <see cref="MetadataInfo"/> class.
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <param name="indexName">Name of the index.</param>
         /// <param name="typeName">Name of the type.</param>
         /// <param name="originalStatus">The original status.</param>
         /// <param name="currentStatus">The current status.</param>
-        /// <param name="serializer">The serializer.</param>
+        /// <param name="evaluator">The evaluator.</param>
         /// <param name="origin">The origin.</param>
         /// <param name="version">The version.</param>
-        /// <exception cref="System.ArgumentException">
-        /// The identifier cannot be null or empty.;id
-        /// or
-        /// The indexName cannot be null or empty.;indexName
-        /// or
-        /// The typeName cannot be null or empty.;typeName
-        /// or
-        /// The version cannot be null or empty.;version
-        /// </exception>
-        /// <exception cref="System.ArgumentNullException">
-        /// originalStatus;The current status cannot be null.
-        /// or
-        /// currentStatus;The current status cannot be null.
-        /// or
-        /// serializer;The serializer cannot be null.
-        /// </exception>
-        private void OnInit(string id, string indexName, string typeName,
-            object originalStatus, object currentStatus, Func<object, string> serializer, OriginContext origin, string version)
+        /// <exception cref="System.ArgumentException">the current status has a different type than original status, verify its type before applying a current status.</exception>
+        public MetadataInfo(string id, string indexName, string typeName,
+            object originalStatus, object currentStatus, MetadataEvaluator evaluator, OriginContext origin, string version)
+            : base(id, indexName, typeName, originalStatus, currentStatus, version)
         {
-            if (string.IsNullOrWhiteSpace(id))
-                throw new ArgumentException("The identifier cannot be null or empty.", "id");
+            if (originalStatus.GetType() != currentStatus.GetType())
+                throw new ArgumentException("the current status has a different type than original status, verify its type before applying a current status.");
 
-            if (string.IsNullOrWhiteSpace(indexName))
-                throw new ArgumentException("The indexName cannot be null or empty.", "indexName");
-
-            if (string.IsNullOrWhiteSpace(typeName))
-                throw new ArgumentException("The typeName cannot be null or empty.", "typeName");
-
-            if (originalStatus == null)
-                throw new ArgumentNullException("originalStatus", "The current status cannot be null.");
-
-            if (currentStatus == null)
-                throw new ArgumentNullException("currentStatus", "The current status cannot be null.");
-
-            if (serializer == null)
-                throw new ArgumentNullException("serializer", "The serializer cannot be null.");
-
-            if (string.IsNullOrWhiteSpace(version))
-                throw new ArgumentException("The version cannot be null or empty.", "version");
-
-            this.Id = id;
-            this.IndexName = indexName;
-            this.TypeName = typeName;
-            this.serializer = serializer;
-            this.Instance = currentStatus;
-            //this.PreviousStatus = serializer.Invoke(originalStatus); // It's needed to set id property if this one exists..
-
-            this.Origin = origin;
-            this.InstanceType = currentStatus.GetType();
-            this.Version = version;
+            this.OnInit(evaluator, originalStatus, origin);
         }
 
         /// <summary>
-        /// Gets the identifier of current instance.
+        /// Called when [initialize].
         /// </summary>
-        /// <value>
-        /// The identifier.
-        /// </value>
-        public string Id { get; private set; }
+        /// <param name="evaluator">The evaluator.</param>
+        /// <param name="originalStatus">The original status.</param>
+        /// <param name="origin">The origin.</param>
+        /// <exception cref="System.ArgumentNullException">evaluator;The evaluator cannot be null.</exception>
+        private void OnInit(MetadataEvaluator evaluator, object originalStatus, OriginContext origin)
+        {
+            if (evaluator == null)
+                throw new ArgumentNullException("evaluator", "The evaluator cannot be null.");
 
-        /// <summary>
-        /// Gets the name of the index.
-        /// </summary>
-        /// <value>
-        /// The name of the index.
-        /// </value>
-        public string IndexName { get; private set; }
+            this.evaluator = evaluator;
+            this.evaluator.Merge.Invoke(this.Instance, originalStatus);
 
-        /// <summary>
-        /// Gets the name of the type.
-        /// </summary>
-        /// <value>
-        /// The name of the type.
-        /// </value>
-        public string TypeName { get; private set; }
-
-        /// <summary>
-        /// Gets the current status.
-        /// </summary>
-        /// <value>
-        /// The current status.
-        /// </value>
-        public object Instance { get; private set; }
+            this.PreviousStatus = new Metadata(this.Id, this.IndexName, this.TypeName, originalStatus, this.Version);
+            this.Origin = origin;
+        }
 
         /// <summary>
         /// Gets the previous status rappresented in json format.
@@ -155,26 +95,13 @@ namespace PersistentLayer.ElasticSearch.Metadata
         public OriginContext Origin { get; private set; }
 
         /// <summary>
-        /// Gets the type of the instance.
+        /// Determines whether this instance has changed.
         /// </summary>
-        /// <value>
-        /// The type of the instance.
-        /// </value>
-        public Type InstanceType { get; private set; }
-
-        /// <summary>
-        /// Gets the version.
-        /// </summary>
-        /// <value>
-        /// The version.
-        /// </value>
-        public string Version { get; private set; }
-
-        
+        /// <returns></returns>
         public bool HasChanged()
         {
-            string currentStatus = this.serializer.Invoke(this.Instance);
-            string prevstatus = this.serializer.Invoke(this.PreviousStatus.Instance);
+            string currentStatus = this.evaluator.Serializer.Invoke(this.Instance);
+            string prevstatus = this.evaluator.Serializer.Invoke(this.PreviousStatus.Instance);
             return !currentStatus.Equals(prevstatus, StringComparison.InvariantCulture);
         }
 
@@ -199,21 +126,11 @@ namespace PersistentLayer.ElasticSearch.Metadata
             var prev = this.PreviousStatus;
             this.PreviousStatus = null;
 
-            this.Instance = prev.Instance;  // qui occorre fare un merge... 
-            
+            //this.Instance = prev.Instance;  // qui occorre fare un merge... 
+            this.evaluator.Merge(prev.Instance, this.Instance);
+
             if (version != null)
                 this.Version = version;
-        }
-
-        /// <summary>
-        /// Returns a <see cref="System.String" /> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String" /> that represents this instance.
-        /// </returns>
-        public override string ToString()
-        {
-            return string.Format("Id: {0}, Index: {1}, TypeName: {2}, Version: {3}", this.Id, this.IndexName, this.TypeName, this.Version);
         }
     }
 }

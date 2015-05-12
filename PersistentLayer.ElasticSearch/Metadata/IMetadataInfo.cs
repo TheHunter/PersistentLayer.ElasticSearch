@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using PersistentLayer.ElasticSearch.Cache;
-
-namespace PersistentLayer.ElasticSearch.Metadata
+﻿namespace PersistentLayer.ElasticSearch.Metadata
 {
     /// <summary>
     /// Rappresents the metadata about an instance present into session cache.

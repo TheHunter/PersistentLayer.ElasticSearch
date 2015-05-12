@@ -56,10 +56,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cache\IMetadata.cs" />
+    <Compile Include="Metadata\IMetadata.cs" />
     <Compile Include="Cache\IMetadataCache.cs" />
+    <Compile Include="Metadata\Metadata.cs" />
     <Compile Include="Cache\MetadataCache.cs" />
-    <Compile Include="Cache\MetadataEvaluator.cs" />
+    <Compile Include="Metadata\MetadataEvaluator.cs" />
     <Compile Include="Exceptions\BulkOperationException.cs" />
     <Compile Include="Exceptions\DuplicatedInstanceException.cs" />
     <Compile Include="Extensions\IdResolverExtension.cs" />

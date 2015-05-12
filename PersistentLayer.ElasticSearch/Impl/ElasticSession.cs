@@ -19,8 +19,8 @@ namespace PersistentLayer.ElasticSearch.Impl
     {
         private readonly Func<bool> tranInProgress;
         private readonly JsonSerializerSettings jsonSettings;
-        private readonly Func<object, string> serializer;
         private readonly MetadataCache localCache;
+        private readonly MetadataEvaluator evaluator;
 
         public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, ElasticClient client)
         {
@@ -29,8 +29,14 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.tranInProgress = tranInProgress;
             this.jsonSettings = jsonSettings;
             this.Client = client;
-            this.serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
+            
+            Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
             this.localCache = new MetadataCache(this.Index, client);
+            this.evaluator = new MetadataEvaluator()
+            {
+                Serializer = serializer,
+                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest)
+            };
         }
 
         public Guid Id { get; private set; }
@@ -61,7 +67,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
             if (this.TranInProgress)
-                this.localCache.Attach(request.AsMetadata(this.serializer, OriginContext.Storage));
+                this.localCache.Attach(request.AsMetadata(this.evaluator, OriginContext.Storage));
 
             return request.Source;
         }
@@ -88,7 +94,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             foreach (var multiGetHit in response)
             {
-                this.localCache.Attach(multiGetHit.AsMetadata(this.serializer, OriginContext.Storage));
+                this.localCache.Attach(multiGetHit.AsMetadata(this.evaluator, OriginContext.Storage));
                 list.Add(multiGetHit.Source);
             }
 
@@ -116,7 +122,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (metadata == null)
                 {
                     docs.Add(hit.Source);
-                    this.localCache.Attach(hit.AsMetadata(this.serializer, OriginContext.Storage));
+                    this.localCache.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
                 }
                 else
                 {
@@ -168,7 +174,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "Save");
 
-                this.localCache.Attach(response.AsMetadata(this.serializer, OriginContext.Newone, entity));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
 
                 return entity;
             }
@@ -224,7 +230,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Found)
                     throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
-                this.localCache.Attach(response.AsMetadata(this.serializer, OriginContext.Storage));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Storage));
             }
         }
 
@@ -262,7 +268,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.localCache.Attach(response.AsMetadata(this.serializer, OriginContext.Newone, entity));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
             }
             
             return entity;
@@ -307,7 +313,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return response.Source;
 
-            this.localCache.AttachOrUpdate(response.AsMetadata(this.serializer, OriginContext.Storage));
+            this.localCache.AttachOrUpdate(response.AsMetadata(this.evaluator, OriginContext.Storage));
             return entity;
         }
 
