@@ -56,8 +56,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var metadata = this.localCache.MetadataExpression(infos => 
                 infos.FirstOrDefault(info => info.Id == id.ToString()
-                    && info.IndexName.Equals(this.Index)
-                    && info.TypeName.Equals(typeName)));
+                    && info.IndexName.Equals(this.Index, StringComparison.InvariantCulture)
+                    && info.TypeName.Equals(typeName, StringComparison.InvariantCulture)));
 
             if (metadata != null)
                 return metadata.Instance as dynamic;

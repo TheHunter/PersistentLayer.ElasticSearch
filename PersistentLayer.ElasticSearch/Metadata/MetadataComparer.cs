@@ -22,7 +22,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             if (x == null || y == null)
                 return false;
 
-            return x.GetHashCode() == y.GetHashCode();
+            return this.GetHashCode(x) == this.GetHashCode(y);
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </returns>
         /// <exception cref="System.NullReferenceException">The metadata used for computing hashcode cannot be null.</exception>
         /// <exception cref="System.ArgumentException">The implementation of metadata must initialize the following properties: { Id, IndexName, TypeName } ;obj</exception>
-        public int GetHashCode(IMetadataInfo obj)
+        public virtual int GetHashCode(IMetadataInfo obj)
         {
             if (obj == null)
                 throw new NullReferenceException("The metadata used for computing hashcode cannot be null.");

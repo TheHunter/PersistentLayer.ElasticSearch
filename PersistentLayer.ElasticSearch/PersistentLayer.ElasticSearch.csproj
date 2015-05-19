@@ -56,9 +56,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Metadata\IMetadata.cs" />
+    <Compile Include="CustomNestSerializer.cs" />
+    <Compile Include="Metadata\IMetadataInfo.cs" />
     <Compile Include="Cache\IMetadataCache.cs" />
-    <Compile Include="Metadata\Metadata.cs" />
+    <Compile Include="Metadata\IndexMetadataComparer.cs" />
+    <Compile Include="Metadata\MetadataInfo.cs" />
     <Compile Include="Cache\MetadataCache.cs" />
     <Compile Include="Metadata\MetadataEvaluator.cs" />
     <Compile Include="Exceptions\BulkOperationException.cs" />
@@ -74,9 +76,9 @@
     <Compile Include="IPersistenceResult.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="Metadata\DocOperationResponse.cs" />
-    <Compile Include="Metadata\IMetadataInfo.cs" />
+    <Compile Include="Metadata\IMetadataWorker.cs" />
     <Compile Include="Metadata\MetadataComparer.cs" />
-    <Compile Include="Metadata\MetadataInfo.cs" />
+    <Compile Include="Metadata\MetadataWorker.cs" />
     <Compile Include="Metadata\OriginContext.cs" />
     <Compile Include="Metadata\PersistenceStatus.cs" />
     <Compile Include="PersistenceType.cs" />

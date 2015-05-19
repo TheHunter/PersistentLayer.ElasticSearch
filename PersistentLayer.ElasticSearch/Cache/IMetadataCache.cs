@@ -57,14 +57,14 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// </summary>
         /// <param name="instances">The instances.</param>
         /// <returns></returns>
-        IEnumerable<IMetadataInfo> FindMetadata(params object[] instances);
+        IEnumerable<IMetadataWorker> FindMetadata(params object[] instances);
 
         /// <summary>
         /// Finds the metadata.
         /// </summary>
         /// <param name="exp">The exp.</param>
         /// <returns></returns>
-        IEnumerable<IMetadataInfo> FindMetadata(Expression<Func<IMetadataInfo, bool>> exp);
+        IEnumerable<IMetadataWorker> FindMetadata(Expression<Func<IMetadataWorker, bool>> exp);
 
         /// <summary>
         /// Metadatas the expression.
@@ -72,21 +72,21 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <typeparam name="TResult">The type of the result.</typeparam>
         /// <param name="expr">The expr.</param>
         /// <returns></returns>
-        TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataInfo>, TResult>> expr);
+        TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr);
 
         /// <summary>
         /// Attaches the specified metadata.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
         /// <returns></returns>
-        bool Attach(params IMetadataInfo[] metadata);
+        bool Attach(params IMetadataWorker[] metadata);
 
         /// <summary>
         /// Attaches the or update.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
         /// <returns></returns>
-        bool AttachOrUpdate(params IMetadataInfo[] metadata);
+        bool AttachOrUpdate(params IMetadataWorker[] metadata);
 
         /// <summary>
         /// Detaches the specified ids.
@@ -127,7 +127,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// </summary>
         /// <param name="exp">The exp.</param>
         /// <returns></returns>
-        bool Detach(Expression<Func<IMetadataInfo, bool>> exp);
+        bool Detach(Expression<Func<IMetadataWorker, bool>> exp);
 
         /// <summary>
         /// Clears the specified index name.

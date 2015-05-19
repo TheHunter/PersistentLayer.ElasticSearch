@@ -1,44 +1,58 @@
-﻿namespace PersistentLayer.ElasticSearch.Metadata
+﻿using System;
+
+namespace PersistentLayer.ElasticSearch.Metadata
 {
     /// <summary>
-    /// Rappresents the metadata about an instance present into session cache.
+    /// Rappresents the instance status with basic metadata.
     /// </summary>
     public interface IMetadataInfo
-        : IMetadata
     {
         /// <summary>
-        /// Gets the previous status rappresented in json format.
+        /// Gets the identifier of current instance.
         /// </summary>
         /// <value>
-        /// The previous status.
+        /// The identifier.
         /// </value>
-        IMetadata PreviousStatus { get; }
+        string Id { get; }
 
         /// <summary>
-        /// Gets the origin of the current instance.
+        /// Gets the name of the index.
         /// </summary>
         /// <value>
-        /// The origin.
+        /// The name of the index.
         /// </value>
-        OriginContext Origin { get; }
+        string IndexName { get; }
 
         /// <summary>
-        /// Determines whether this instance has changed.
+        /// Gets the name of the type.
         /// </summary>
-        /// <returns></returns>
-        bool HasChanged();
+        /// <value>
+        /// The name of the type.
+        /// </value>
+        string TypeName { get; }
 
         /// <summary>
-        /// Updates the specified metadata.
+        /// Gets the current status.
         /// </summary>
-        /// <param name="metadata">The metadata.</param>
-        /// <param name="isPersistent">if set to <c>true</c> [is persistent].</param>
-        void Update(IMetadataInfo metadata, bool isPersistent = false);
+        /// <value>
+        /// The current status.
+        /// </value>
+        object Instance { get; }
+        
+        /// <summary>
+        /// Gets the type of the instance.
+        /// </summary>
+        /// <value>
+        /// The type of the instance.
+        /// </value>
+        Type InstanceType { get; }
 
         /// <summary>
-        /// Restores the specified version.
+        /// Gets the version.
         /// </summary>
-        /// <param name="version">The version.</param>
-        void Restore(string version = null);
+        /// <value>
+        /// The version.
+        /// </value>
+        string Version { get; }
     }
 }

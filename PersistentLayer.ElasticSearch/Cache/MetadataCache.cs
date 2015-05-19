@@ -13,16 +13,16 @@ namespace PersistentLayer.ElasticSearch.Cache
         : IMetadataCache, IDisposable
     {
         //private readonly IdResolver idResolver = new IdResolver();
-        private readonly HashSet<IMetadataInfo> localCache;
+        private readonly HashSet<IMetadataWorker> localCache;
         private readonly IElasticClient client;
-        private readonly MetadataComparer comparer;
+        private readonly IndexMetadataComparer comparer;
         private bool disposed;
 
         public MetadataCache(string index, IElasticClient client)
         {
             this.Index = index;
-            this.comparer = new MetadataComparer();
-            this.localCache = new HashSet<IMetadataInfo>(this.comparer);
+            this.comparer = new IndexMetadataComparer();
+            this.localCache = new HashSet<IMetadataWorker>(this.comparer);
             this.client = client;
             this.disposed = false;
         }
@@ -65,7 +65,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                     && info.Instance == instance));
         }
 
-        public IEnumerable<IMetadataInfo> FindMetadata(params object[] instances)
+        public IEnumerable<IMetadataWorker> FindMetadata(params object[] instances)
         {
             this.ThrowIfDisposed();
 
@@ -75,20 +75,20 @@ namespace PersistentLayer.ElasticSearch.Cache
                 .ToList();
         }
 
-        public IEnumerable<IMetadataInfo> FindMetadata(Expression<Func<IMetadataInfo, bool>> exp)
+        public IEnumerable<IMetadataWorker> FindMetadata(Expression<Func<IMetadataWorker, bool>> exp)
         {
             this.ThrowIfDisposed();
             return this.GetCache(cond: exp.Compile())
                 .ToList();
         }
 
-        public TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataInfo>, TResult>> expr)
+        public TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr)
         {
             this.ThrowIfDisposed();
             return expr.Compile().Invoke(this.GetCache());
         }
 
-        public bool Attach(params IMetadataInfo[] metadata)
+        public bool Attach(params IMetadataWorker[] metadata)
         {
             this.ThrowIfDisposed();
 
@@ -101,7 +101,7 @@ namespace PersistentLayer.ElasticSearch.Cache
             return ret;
         }
 
-        public bool AttachOrUpdate(params IMetadataInfo[] metadata)
+        public bool AttachOrUpdate(params IMetadataWorker[] metadata)
         {
             this.ThrowIfDisposed();
 
@@ -136,7 +136,7 @@ namespace PersistentLayer.ElasticSearch.Cache
             this.ThrowIfDisposed();
 
             string indexName = this.Index;
-            Func<IMetadataInfo, string, bool> func = (info, id) =>
+            Func<IMetadataWorker, string, bool> func = (info, id) =>
                 info.Id.Equals(id, StringComparison.InvariantCulture);
 
             var toInspect = this.GetCache(cond: info => info.TypeName.Equals(typeName, StringComparison.InvariantCultureIgnoreCase)
@@ -216,7 +216,7 @@ namespace PersistentLayer.ElasticSearch.Cache
             return true;
         }
 
-        public bool Detach(Expression<Func<IMetadataInfo, bool>> exp)
+        public bool Detach(Expression<Func<IMetadataWorker, bool>> exp)
         {
             this.ThrowIfDisposed();
 
@@ -314,7 +314,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <param name="indexName">Name of the index.</param>
         /// <param name="cond">The cond.</param>
         /// <returns></returns>
-        private IEnumerable<IMetadataInfo> GetCache(string indexName = null, Func<IMetadataInfo, bool> cond = null)
+        private IEnumerable<IMetadataWorker> GetCache(string indexName = null, Func<IMetadataWorker, bool> cond = null)
         {
             return cond == null
                 ? this.localCache.Where(info =>
@@ -381,7 +381,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         private void Restore(IEnumerable<BulkOperationResponseItem> instancesToRestore)
         {
             // here It's requeried to restore instances which are persisted correctly.
-            Func<IMetadataInfo, BulkOperationResponseItem, bool> func = (info, item) =>
+            Func<IMetadataWorker, BulkOperationResponseItem, bool> func = (info, item) =>
                 info.Id.Equals(item.Id, StringComparison.InvariantCulture)
                 && info.TypeName.Equals(item.Type)
                 && info.IndexName.Equals(item.Index);
@@ -393,7 +393,6 @@ namespace PersistentLayer.ElasticSearch.Cache
                 var metadata = this.localCache.FirstOrDefault(info => func(info, item));
                 if (metadata != null)
                 {
-                    //metadata.Restore(item.Version);
                     if (metadata.Origin == OriginContext.Newone)
                     {
                         request.Operations.Add(
