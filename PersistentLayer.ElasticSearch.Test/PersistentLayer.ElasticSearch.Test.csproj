@@ -59,6 +59,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BasicElasticConfig.cs" />
+    <Compile Include="Documents\Person.cs" />
+    <Compile Include="Documents\Student.cs" />
     <Compile Include="Metadata\MetadataTester.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

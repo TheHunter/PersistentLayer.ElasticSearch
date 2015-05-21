@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using Nest;
@@ -12,6 +14,27 @@ namespace PersistentLayer.ElasticSearch.Extensions
     /// </summary>
     public static class MetadataExtension
     {
+        /// <summary>
+        /// Converts into dynamic instance.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="dynamicProperties">The dynamic properties.</param>
+        /// <returns></returns>
+        public static dynamic AsDynamic(this object value, params KeyValuePair<string, object>[] dynamicProperties)
+        {
+            IDictionary<string, object> expando = new ExpandoObject();
+
+            foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(value.GetType()))
+                expando.Add(property.Name, property.GetValue(value));
+
+            foreach (var dynamicProperty in dynamicProperties)
+            {
+                expando.Add(dynamicProperty.Key, dynamicProperty.Value);
+            }
+
+            return expando;
+        }
+
         /// <summary>
         /// To the document response.
         /// </summary>

@@ -53,26 +53,58 @@ namespace PersistentLayer.ElasticSearch.Cache
         bool Cached(params object[] instances);
 
         /// <summary>
-        /// Finds the metadata.
+        /// Finds the first occurrence for the given parameters.
         /// </summary>
-        /// <param name="instances">The instances.</param>
+        /// <param name="id">The identifier.</param>
+        /// <param name="typeName">Name of the type.</param>
+        /// <param name="index">The index.</param>
         /// <returns></returns>
-        IEnumerable<IMetadataWorker> FindMetadata(params object[] instances);
+        IMetadataWorker SingleOrDefault(string id, string typeName, string index = null);
 
         /// <summary>
         /// Finds the metadata.
         /// </summary>
-        /// <param name="exp">The exp.</param>
+        /// <param name="typeName">Name of the type.</param>
+        /// <param name="index">The index.</param>
         /// <returns></returns>
-        IEnumerable<IMetadataWorker> FindMetadata(Expression<Func<IMetadataWorker, bool>> exp);
+        IEnumerable<IMetadataWorker> FindMetadata(string typeName, string index = null);
+
+        /// <summary>
+        /// Finds the metadata.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <param name="instances">The instances.</param>
+        /// <returns></returns>
+        IEnumerable<IMetadataWorker> FindMetadata(string index = null, params object[] instances);
+
+        /// <summary>
+        /// Finds the metadata.
+        /// </summary>
+        /// <param name="exp">
+        /// The exp.
+        /// </param>
+        /// <param name="index">
+        /// The index.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        IEnumerable<IMetadataWorker> FindMetadata(Expression<Func<IMetadataWorker, bool>> exp, string index = null);
 
         /// <summary>
         /// Metadatas the expression.
         /// </summary>
-        /// <typeparam name="TResult">The type of the result.</typeparam>
-        /// <param name="expr">The expr.</param>
-        /// <returns></returns>
-        TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr);
+        /// <typeparam name="TResult">
+        /// The type of the result.
+        /// </typeparam>
+        /// <param name="expr">
+        /// The expr.
+        /// </param>
+        /// <param name="index">
+        /// The index.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr, string index = null);
 
         /// <summary>
         /// Attaches the specified metadata.

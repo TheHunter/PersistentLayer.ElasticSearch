@@ -112,16 +112,16 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Updates the specified metadata.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
-        /// <param name="isPersistent">if set to <c>true</c> [is persistent].</param>
-        public void Update(IMetadataWorker metadata, bool isPersistent = false)
+        public void Update(IMetadataWorker metadata)
         {
             this.Id = metadata.Id;
             
-            this.evaluator.Merge(this.emptyReference, this.Instance);
-            this.evaluator.Merge(metadata.Instance, this.Instance);
+            //this.evaluator.Merge(this.emptyReference, this.Instance);
+            //this.evaluator.Merge(metadata.Instance, this.Instance);
+            this.UpdateInstance(metadata.Instance);
 
             this.Version = metadata.Version;
-            //this.Origin = isPersistent ? OriginContext.Storage : OriginContext.Newone;
+            this.Origin = metadata.Origin;
         }
 
         /// <summary>
@@ -134,11 +134,36 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.PreviousStatus = null;
 
             // making a reset on the origin reference (all properties can be set to default values.)
-            this.evaluator.Merge(this.emptyReference, this.Instance);
-            this.evaluator.Merge(prev.Instance, this.Instance);
+            //this.evaluator.Merge(this.emptyReference, this.Instance);
+            //this.evaluator.Merge(prev.Instance, this.Instance);
+            this.UpdateInstance(prev.Instance);
 
             if (version != null)
                 this.Version = version;
+        }
+
+        private void UpdateInstance(object data)
+        {
+            this.evaluator.Merge(this.emptyReference, this.Instance);
+            this.evaluator.Merge(data, this.Instance);
+        }
+
+        /// <summary>
+        /// Becomes the metadata persistent.
+        /// </summary>
+        /// <param name="version">The version.</param>
+        /// <exception cref="ArgumentNullException">version;Version for updating metadata cannot be null.</exception>
+        public void BecomePersistent(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                throw new ArgumentNullException("version", "Version for updating metadata cannot be null.");
+
+            if (this.Origin == OriginContext.Newone)
+            {
+                this.Origin = OriginContext.Storage;
+                // here It's needed to set the _idsession property to null.
+            }
+            this.Version = version;
         }
     }
 }

@@ -9,7 +9,7 @@ namespace PersistentLayer.ElasticSearch
     public interface IElasticSession
         : ISession
     {
-        Guid Id { get; }
+        string Id { get; }
 
         string Index { get; }
 

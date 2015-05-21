@@ -32,13 +32,18 @@
         /// Updates the specified metadata.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
-        /// <param name="isPersistent">if set to <c>true</c> [is persistent].</param>
-        void Update(IMetadataWorker metadata, bool isPersistent = false);
+        void Update(IMetadataWorker metadata);
 
         /// <summary>
         /// Restores the specified version.
         /// </summary>
         /// <param name="version">The version.</param>
         void Restore(string version = null);
+
+        /// <summary>
+        /// Becomes the metadata persistent.
+        /// </summary>
+        /// <param name="version">The version.</param>
+        void BecomePersistent(string version);
     }
 }

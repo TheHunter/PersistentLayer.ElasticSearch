@@ -12,14 +12,20 @@ namespace PersistentLayer.ElasticSearch.Cache
     public class MetadataCache
         : IMetadataCache, IDisposable
     {
-        //private readonly IdResolver idResolver = new IdResolver();
+        // private readonly IdResolver idResolver = new IdResolver();
         private readonly HashSet<IMetadataWorker> localCache;
         private readonly IElasticClient client;
-        private readonly IndexMetadataComparer comparer;
+        private readonly IEqualityComparer<IMetadataInfo> comparer;
         private bool disposed;
 
         public MetadataCache(string index, IElasticClient client)
         {
+            if (string.IsNullOrWhiteSpace(index))
+                throw new ArgumentException("The index name cannot be null or empty.", "index");
+
+            if (client == null)
+                throw new ArgumentNullException("client", "The elastic client cannot be null");
+
             this.Index = index;
             this.comparer = new IndexMetadataComparer();
             this.localCache = new HashSet<IMetadataWorker>(this.comparer);
@@ -65,24 +71,56 @@ namespace PersistentLayer.ElasticSearch.Cache
                     && info.Instance == instance));
         }
 
-        public IEnumerable<IMetadataWorker> FindMetadata(params object[] instances)
+        /// <summary>
+        /// Finds the first occurrence for the given parameters.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="typeName">Name of the type.</param>
+        /// <param name="index">The index.</param>
+        /// <returns></returns>
+        /// <exception cref="DuplicatedInstanceException">if it founded more than one instance.</exception>
+        public IMetadataWorker SingleOrDefault(string id, string typeName, string index = null)
+        {
+            var ind = index ?? this.Index;
+            try
+            {
+                return this.localCache.SingleOrDefault(worker =>
+                    worker.Id.Equals(id, StringComparison.InvariantCulture)
+                    && worker.TypeName.Equals(typeName, StringComparison.InvariantCulture)
+                    && worker.IndexName.Equals(ind, StringComparison.InvariantCulture)
+                    );
+            }
+            catch (Exception ex)
+            {
+                throw new DuplicatedInstanceException(
+                    string.Format("It was found more than one instance for the given parameter, Id:{0}, Typename: {1}, Index:{2}", id, typeName, ind),
+                    ex);
+            }
+        }
+
+        public IEnumerable<IMetadataWorker> FindMetadata(string typeName, string index = null)
+        {
+            return this.GetCache(index, worker => worker.TypeName.Equals(typeName, StringComparison.InvariantCulture));
+        }
+
+        public IEnumerable<IMetadataWorker> FindMetadata(string index = null, params object[] instances)
         {
             this.ThrowIfDisposed();
 
-            var toInspect = this.GetCache().ToList();
+            var toInspect = this.GetCache(index).ToList();
             return instances.Select(instance => toInspect.FirstOrDefault(info => info.Instance == instance))
                 .Where(info => info != null)
                 .ToList();
         }
 
-        public IEnumerable<IMetadataWorker> FindMetadata(Expression<Func<IMetadataWorker, bool>> exp)
+        public IEnumerable<IMetadataWorker> FindMetadata(Expression<Func<IMetadataWorker, bool>> exp, string index = null)
         {
             this.ThrowIfDisposed();
-            return this.GetCache(cond: exp.Compile())
+            return this.GetCache(indexName: index, cond: exp.Compile())
                 .ToList();
         }
 
-        public TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr)
+        public TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr, string index = null)
         {
             this.ThrowIfDisposed();
             return expr.Compile().Invoke(this.GetCache());
@@ -371,6 +409,38 @@ namespace PersistentLayer.ElasticSearch.Cache
             
             // everything was gone well.. so It's requeried to update metadata with bulk response
             // so Version and Origin (for new instances).
+            foreach (var item in response.Items)
+            {
+                var metadata = this.SingleOrDefault(item.Id, item.Type, this.Index);
+                if (metadata == null)
+                    continue;
+
+                if (metadata.Origin == OriginContext.Newone)
+                {
+                    BulkOperationResponseItem current = item;
+                    var respo = this.client.Update<object>(descriptor => descriptor
+                        .Id(current.Id)
+                        .Type(current.Type)
+                        .Index(this.Index)
+                        .Version(Convert.ToInt64(current.Version))
+                        .Script("ctx._source.remove(\"_idsession\")")
+                        );
+
+                    if (respo.IsValid)
+                    {
+                        metadata.BecomePersistent(respo.Version);
+                    }
+                    else
+                    {
+                        // It's needed to write this error into a log file...
+                    }
+                }
+                else
+                {
+                    metadata.BecomePersistent(item.Version);
+                }
+                
+            }
         }
 
         /// <summary>
@@ -418,7 +488,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                             });
                         }
 
-                        //if (response.IsValid)
+                        // if (response.IsValid)
                         //    metadata.Restore(item.Version);
                     }
                 }

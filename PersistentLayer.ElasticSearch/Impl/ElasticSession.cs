@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -18,16 +19,16 @@ namespace PersistentLayer.ElasticSearch.Impl
         : IElasticSession
     {
         private readonly Func<bool> tranInProgress;
-        private readonly JsonSerializerSettings jsonSettings;
+        //private readonly JsonSerializerSettings jsonSettings;
         private readonly MetadataCache localCache;
         private readonly MetadataEvaluator evaluator;
 
-        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, ElasticClient client)
+        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, IElasticClient client)
         {
-            this.Id = Guid.NewGuid();
+            this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
             this.tranInProgress = tranInProgress;
-            this.jsonSettings = jsonSettings;
+            //this.jsonSettings = jsonSettings;
             this.Client = client;
             
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
@@ -39,7 +40,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             };
         }
 
-        public Guid Id { get; private set; }
+        public string Id { get; private set; }
 
         public string Index { get; private set; }
 
@@ -54,10 +55,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             where TEntity : class
         {
             var typeName = this.Client.Infer.TypeName<TEntity>();
-            var metadata = this.localCache.MetadataExpression(infos => 
-                infos.FirstOrDefault(info => info.Id == id.ToString()
-                    && info.IndexName.Equals(this.Index, StringComparison.InvariantCulture)
-                    && info.TypeName.Equals(typeName, StringComparison.InvariantCulture)));
+            var metadata = this.localCache.SingleOrDefault(id.ToString(), typeName, this.Index);
 
             if (metadata != null)
                 return metadata.Instance as dynamic;
@@ -80,7 +78,12 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             var idsToHit = new List<string>();
 
-            var metadata = this.localCache.FindMetadata(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName)).ToArray();
+            //var metadata = this.localCache.FindMetadata(info => info.IndexName.Equals(this.Index, StringComparison.InvariantCulture) && info.TypeName.Equals(typeName, StringComparison.InvariantCulture))
+            //    .ToArray();
+
+            var metadata = this.localCache.FindMetadata(typeName, this.Index)
+                .ToArray();
+
             foreach (var id in ids.Select(n => n.ToString()))
             {
                 var current = metadata.FirstOrDefault(n => n.Id.Equals(id));
@@ -113,11 +116,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var docs = new List<TEntity>();
             foreach (var hit in response.Hits)
             {
-
-                var metadata = this.localCache.MetadataExpression(infos =>
-                infos.FirstOrDefault(info => info.Id == hit.Id
-                    && info.IndexName.Equals(this.Index)
-                    && info.TypeName.Equals(hit.Type)));
+                var metadata = this.localCache.SingleOrDefault(hit.Id, hit.Type, this.Index);
 
                 if (metadata == null)
                 {
@@ -174,8 +173,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "Save");
 
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
-
+                //this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, this.AsDynamicDoc(entity)));
                 return entity;
             }
 
@@ -260,15 +259,23 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
             else
             {
-                var res0 = this.Client.DocumentExists<TEntity>(descriptor => descriptor.Id(id.ToString()).Index(this.Index));
+                var res0 = this.Client.DocumentExists<TEntity>(descriptor => descriptor
+                    .Id(id.ToString())
+                    .Index(this.Index));
+
                 if (res0.Exists)
                     throw new DuplicatedInstanceException(string.Format("Impossible to save the given instance because is already present into storage, id: {0}, index: {1}", id, this.Index));
 
-                var response = this.Client.Index(entity, descriptor => descriptor.Id(id.ToString()).Index(this.Index));
+                var response = this.Client.Index(entity, descriptor => descriptor
+                    .Id(id.ToString())
+                    .Type(typeName)
+                    .Index(this.Index));
+
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                //this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, this.AsDynamicDoc(entity)));
             }
             
             return entity;
@@ -345,7 +352,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public bool Dirty(params object[] instances)
         {
-            return this.localCache.FindMetadata(instances).All(info => info.HasChanged());
+            return this.localCache.FindMetadata(instances: instances).All(info => info.HasChanged());
         }
 
         public bool Dirty()
@@ -379,6 +386,11 @@ namespace PersistentLayer.ElasticSearch.Impl
         public ISession ChildSession()
         {
             throw new NotImplementedException();
+        }
+
+        private object AsDynamicDoc(object instance)
+        {
+            return instance.AsDynamic(new KeyValuePair<string, object>("_idsession", this.Id));
         }
     }
 }
