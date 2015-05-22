@@ -78,9 +78,6 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             var idsToHit = new List<string>();
 
-            //var metadata = this.localCache.FindMetadata(info => info.IndexName.Equals(this.Index, StringComparison.InvariantCulture) && info.TypeName.Equals(typeName, StringComparison.InvariantCulture))
-            //    .ToArray();
-
             var metadata = this.localCache.FindMetadata(typeName, this.Index)
                 .ToArray();
 

@@ -119,29 +119,29 @@ namespace PersistentLayer.ElasticSearch.Impl
             return entity;
         }
 
-        public IEnumerable<IPersistenceResult<TEntity>> MakePersistent<TEntity>(params TEntity[] entities) where TEntity : class
-        {
-            var response = this.Client.Bulk(descriptor =>
-                descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor
-                    .Index(this.Index)));
+        //public IEnumerable<IPersistenceResult<TEntity>> MakePersistent<TEntity>(params TEntity[] entities) where TEntity : class
+        //{
+        //    var response = this.Client.Bulk(descriptor =>
+        //        descriptor.IndexMany(entities, (indexDescriptor, entity) => indexDescriptor
+        //            .Index(this.Index)));
 
-            var items = response.Items.ToArray();
-            var list = new List<IPersistenceResult<TEntity>>();
-            for (var index = 0; index < items.Length; index++)
-            {
-                var current = items[index];
-                list.Add(
-                    new PersistenceResult<TEntity>
-                    {
-                        Error = current.Error,
-                        Id = current.Id,
-                        Index = current.Index,
-                        PersistenceType = PersistenceType.Create,
-                        IsValid = current.IsValid
-                    });
-            }
-            return list;
-        }
+        //    var items = response.Items.ToArray();
+        //    var list = new List<IPersistenceResult<TEntity>>();
+        //    for (var index = 0; index < items.Length; index++)
+        //    {
+        //        var current = items[index];
+        //        list.Add(
+        //            new PersistenceResult<TEntity>
+        //            {
+        //                Error = current.Error,
+        //                Id = current.Id,
+        //                Index = current.Index,
+        //                PersistenceType = PersistenceType.Create,
+        //                IsValid = current.IsValid
+        //            });
+        //    }
+        //    return list;
+        //}
 
         public TEntity Save<TEntity>(TEntity entity, object id) where TEntity : class
         {
