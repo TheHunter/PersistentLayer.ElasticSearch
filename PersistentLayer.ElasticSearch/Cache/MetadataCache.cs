@@ -27,7 +27,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                 throw new ArgumentNullException("client", "The elastic client cannot be null");
 
             this.Index = index;
-            this.comparer = new IndexMetadataComparer();
+            this.comparer = new MetadataComparer();
             this.localCache = new HashSet<IMetadataWorker>(this.comparer);
             this.client = client;
             this.disposed = false;
@@ -35,36 +35,36 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         public string Index { get; private set; }
 
-        public bool Cached<TEntity>(params string[] ids) where TEntity : class
+        public bool Cached<TEntity>(string index = null, params string[] ids) where TEntity : class
         {
             this.ThrowIfDisposed();
 
             Type instanceType = typeof(TEntity);
-            return this.Cached(instanceType, ids);
+            return this.Cached(instanceType, index, ids);
         }
 
-        public bool Cached(Type instanceType, params string[] ids)
+        public bool Cached(Type instanceType, string index = null, params string[] ids)
         {
             var typeName = this.client.Infer.IndexName(instanceType);
-            return this.Cached(typeName, ids);
+            return this.Cached(typeName, index, ids);
         }
 
-        public bool Cached(string typeName, params string[] ids)
+        public bool Cached(string typeName, string index = null, params string[] ids)
         {
             this.ThrowIfDisposed();
 
-            var toInspect = this.GetCache().ToList();
+            var toInspect = this.GetCache(index).ToList();
             return ids.All(s => toInspect.Any(info =>
                 info.Id.Equals(s, StringComparison.InvariantCulture)
                 && info.TypeName.Equals(typeName, StringComparison.InvariantCulture)));
         }
 
-        public bool Cached(params object[] instances)
+        public bool Cached(string index = null, params object[] instances)
         {
             this.ThrowIfDisposed();
 
             var inferrer = this.client.Infer;
-            var toInspect = this.GetCache().ToList();
+            var toInspect = this.GetCache(index).ToList();
             return instances.All(instance => toInspect
                 .Any(info => 
                     info.TypeName.Equals(inferrer.TypeName(instance.GetType()), StringComparison.InvariantCulture)
@@ -100,7 +100,8 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         public IEnumerable<IMetadataWorker> FindMetadata(string typeName, string index = null)
         {
-            return this.GetCache(index, worker => worker.TypeName.Equals(typeName, StringComparison.InvariantCulture));
+            return this.GetCache(index, worker => worker
+                .TypeName.Equals(typeName, StringComparison.InvariantCulture));
         }
 
         public IEnumerable<IMetadataWorker> FindMetadata(string index = null, params object[] instances)
@@ -123,7 +124,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         public TResult MetadataExpression<TResult>(Expression<Func<IEnumerable<IMetadataWorker>, TResult>> expr, string index = null)
         {
             this.ThrowIfDisposed();
-            return expr.Compile().Invoke(this.GetCache());
+            return expr.Compile().Invoke(this.GetCache(index));
         }
 
         public bool Attach(params IMetadataWorker[] metadata)
@@ -155,30 +156,29 @@ namespace PersistentLayer.ElasticSearch.Cache
             return true;
         }
 
-        public bool Detach<TEntity>(params string[] ids) where TEntity : class
+        public bool Detach<TEntity>(string index = null, params string[] ids) where TEntity : class
         {
             this.ThrowIfDisposed();
 
-            return this.Detach(this.client.Infer.TypeName<TEntity>(), ids);
+            return this.Detach(this.client.Infer.TypeName<TEntity>(), index, ids);
         }
 
-        public bool Detach(Type instanceType, params string[] ids)
+        public bool Detach(Type instanceType, string index = null, params string[] ids)
         {
             this.ThrowIfDisposed();
 
-            return this.Detach(this.client.Infer.TypeName(instanceType), ids);
+            return this.Detach(this.client.Infer.TypeName(instanceType), index, ids);
         }
 
-        public bool Detach(string typeName, params string[] ids)
+        public bool Detach(string typeName, string index = null, params string[] ids)
         {
             this.ThrowIfDisposed();
 
-            string indexName = this.Index;
+            string indexName = index ?? this.Index;
             Func<IMetadataWorker, string, bool> func = (info, id) =>
                 info.Id.Equals(id, StringComparison.InvariantCulture);
 
-            var toInspect = this.GetCache(cond: info => info.TypeName.Equals(typeName, StringComparison.InvariantCultureIgnoreCase)
-                && info.IndexName.Equals(indexName, StringComparison.InvariantCultureIgnoreCase)
+            var toInspect = this.GetCache(indexName, info => info.TypeName.Equals(typeName, StringComparison.InvariantCultureIgnoreCase)
                 ).ToList();
 
             IBulkRequest request = new BulkRequest();
@@ -213,12 +213,12 @@ namespace PersistentLayer.ElasticSearch.Cache
             return true;
         }
 
-        public bool Detach<TEntity>(params TEntity[] instances) where TEntity : class
+        public bool Detach<TEntity>(string index = null, params TEntity[] instances) where TEntity : class
         {
             this.ThrowIfDisposed();
 
             var typeName = this.client.Infer.TypeName<TEntity>();
-            var toInspect = this.GetCache(cond: info =>
+            var toInspect = this.GetCache(indexName: index ?? this.Index, cond: info =>
                 info.TypeName.Equals(typeName, StringComparison.InvariantCulture)
                 ).ToList();
 
@@ -259,7 +259,7 @@ namespace PersistentLayer.ElasticSearch.Cache
             this.ThrowIfDisposed();
 
             IBulkRequest request = new BulkRequest();
-            var toRemove = this.GetCache(cond: exp.Compile())
+            var toRemove = this.GetCache(null, cond: exp.Compile())
                 .ToList();
 
             foreach (var metadata in toRemove)
@@ -292,9 +292,13 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
 
-            IBulkRequest request = new BulkRequest();
             var toRemove = this.GetCache(indexName)
                 .ToList();
+
+            if (!toRemove.Any())
+                return;
+
+            IBulkRequest request = new BulkRequest();
 
             foreach (var metadata in toRemove)
             {
@@ -317,34 +321,34 @@ namespace PersistentLayer.ElasticSearch.Cache
                     response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
         }
 
-        private void ClearAll()
-        {
-            this.ThrowIfDisposed();
+        //private void ClearAll()
+        //{
+        //    this.ThrowIfDisposed();
 
-            IBulkRequest request = new BulkRequest();
-            var toRemove = this.localCache.Where(info => info.Origin == OriginContext.Newone)
-                .ToList();
+        //    IBulkRequest request = new BulkRequest();
+        //    var toRemove = this.localCache.Where(info => info.Origin == OriginContext.Newone)
+        //        .ToList();
 
-            foreach (var metadata in toRemove)
-            {
-                this.localCache.Remove(metadata);
-                if (metadata.Origin == OriginContext.Newone)
-                {
-                    request.Operations.Add(
-                        new BulkDeleteOperation<object>(metadata.Id)
-                        {
-                            Index = metadata.IndexName,
-                            Type = metadata.TypeName,
-                            Version = metadata.Version
-                        });
-                }
-            }
+        //    foreach (var metadata in toRemove)
+        //    {
+        //        this.localCache.Remove(metadata);
+        //        if (metadata.Origin == OriginContext.Newone)
+        //        {
+        //            request.Operations.Add(
+        //                new BulkDeleteOperation<object>(metadata.Id)
+        //                {
+        //                    Index = metadata.IndexName,
+        //                    Type = metadata.TypeName,
+        //                    Version = metadata.Version
+        //                });
+        //        }
+        //    }
 
-            IBulkResponse response = this.client.Bulk(request);
-            if (response.ItemsWithErrors.Any())
-                throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
-                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
-        }
+        //    IBulkResponse response = this.client.Bulk(request);
+        //    if (response.ItemsWithErrors.Any())
+        //        throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
+        //            response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
+        //}
 
         /// <summary>
         /// Gets the cache.
@@ -352,16 +356,21 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <param name="indexName">Name of the index.</param>
         /// <param name="cond">The cond.</param>
         /// <returns></returns>
-        private IEnumerable<IMetadataWorker> GetCache(string indexName = null, Func<IMetadataWorker, bool> cond = null)
+        private IEnumerable<IMetadataWorker> GetCache(string indexName, Func<IMetadataWorker, bool> cond = null)
         {
-            return cond == null
-                ? this.localCache.Where(info =>
-                    (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
-                    )
-                : this.localCache.Where(info =>
-                    (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
-                    && cond.Invoke(info)
-                    );
+            //return cond == null
+            //    ? this.localCache.Where(info =>
+            //        (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
+            //        )
+            //    : this.localCache.Where(info =>
+            //        (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
+            //        && cond.Invoke(info)
+            //        );
+
+            return this.localCache.Where(worker =>
+                (indexName == null || worker.IndexName.Equals(indexName, StringComparison.InvariantCulture))
+                && (cond == null || cond.Invoke(worker))
+                );
         }
 
         /// <summary>
@@ -372,7 +381,12 @@ namespace PersistentLayer.ElasticSearch.Cache
             this.ThrowIfDisposed();
             IBulkRequest request = new BulkRequest();
 
-            var metadataToPersist = this.GetCache(cond: info => info.HasChanged()).ToList();
+            var metadataToPersist = this.GetCache(null, cond: info => info.HasChanged())
+                .ToList();
+
+            if (!metadataToPersist.Any())
+                return;
+
             foreach (var metadata in metadataToPersist)
             {
                 request.Operations.Add(
@@ -509,7 +523,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
 
-            this.ClearAll();
+            this.Clear();
             this.Dispose(true);
         }
 

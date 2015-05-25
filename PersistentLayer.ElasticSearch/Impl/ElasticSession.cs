@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using Nest;
 using Nest.Resolvers;
 using Newtonsoft.Json;
@@ -51,7 +50,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public IElasticClient Client { get; private set; }
 
-        public TEntity FindBy<TEntity>(object id)
+        public TEntity FindBy<TEntity>(object id, string index = null)
             where TEntity : class
         {
             var typeName = this.Client.Infer.TypeName<TEntity>();
@@ -60,7 +59,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (metadata != null)
                 return metadata.Instance as dynamic;
 
-            var request = this.Client.Get<TEntity>(id.ToString(), this.Index);
+            var request = this.Client.Get<TEntity>(id.ToString(), index ?? this.Index);
             if (!request.IsValid)
                 throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
@@ -70,7 +69,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             return request.Source;
         }
 
-        public IEnumerable<TEntity> FindBy<TEntity>(params object[] ids)
+        public IEnumerable<TEntity> FindBy<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
             var list = new List<TEntity>();
@@ -78,7 +77,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             var idsToHit = new List<string>();
 
-            var metadata = this.localCache.FindMetadata(typeName, this.Index)
+            var metadata = this.localCache.FindMetadata(typeName, index ?? this.Index)
                 .ToArray();
 
             foreach (var id in ids.Select(n => n.ToString()))
@@ -90,7 +89,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                     idsToHit.Add(id);
             }
 
-            var response = this.Client.GetMany<TEntity>(idsToHit, this.Index).Where(n => n.Found).ToArray();
+            var response = this.Client.GetMany<TEntity>(idsToHit, index ?? this.Index).Where(n => n.Found).ToArray();
 
             foreach (var multiGetHit in response)
             {
@@ -101,19 +100,19 @@ namespace PersistentLayer.ElasticSearch.Impl
             return list;
         }
 
-        public IEnumerable<TEntity> FindAll<TEntity>()
+        public IEnumerable<TEntity> FindAll<TEntity>(string index = null)
             where TEntity : class
         {
             var response = this.Client.Search<TEntity>(descriptor => descriptor
                 .Version()
-                .Index(this.Index)
+                .Index(index ?? this.Index)
                 .From(0)
                 .Take(20));
 
             var docs = new List<TEntity>();
             foreach (var hit in response.Hits)
             {
-                var metadata = this.localCache.SingleOrDefault(hit.Id, hit.Type, this.Index);
+                var metadata = this.localCache.SingleOrDefault(hit.Id, hit.Type, hit.Index);
 
                 if (metadata == null)
                 {
@@ -128,33 +127,34 @@ namespace PersistentLayer.ElasticSearch.Impl
             return docs;
         }
 
-        public IEnumerable<TEntity> FindAll<TEntity>(Expression<Func<TEntity, bool>> predicate)
+        public IEnumerable<TEntity> FindAll<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
             where TEntity : class
         {
             throw new NotImplementedException();
         }
 
-        public bool Exists<TEntity>(params object[] ids)
+        public bool Exists<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            return this.Client.Count<TEntity>(descriptor => descriptor.Index(this.Index)
+            return this.Client.Count<TEntity>(descriptor => descriptor
+                .Index(index ?? this.Index)
                 .Query(queryDescriptor => queryDescriptor.Ids(ids.Select(n => n.ToString()))))
                 .Count == ids.Length;
         }
 
-        public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate)
+        public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
             where TEntity : class
         {
             throw new NotImplementedException();
         }
 
-        public TResult ExecuteExpression<TEntity, TResult>(Expression<Func<IQueryable<TEntity>, TResult>> queryExpr)
+        public TResult ExecuteExpression<TEntity, TResult>(Expression<Func<IQueryable<TEntity>, TResult>> queryExpr, string index = null)
             where TEntity : class
         {
             throw new NotImplementedException();
         }
 
-        public TEntity MakePersistent<TEntity>(TEntity entity)
+        public TEntity MakePersistent<TEntity>(TEntity entity, string index = null)
             where TEntity : class
         {
             if (!this.TranInProgress)
@@ -166,7 +166,10 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (string.IsNullOrWhiteSpace(id))
             {
                 /* da aggiungere la proprieta dinamica */
-                var response = this.Client.Index(entity, descriptor => descriptor.Index(this.Index).Id(id));
+                var response = this.Client.Index(entity, descriptor => descriptor
+                    .Index(index ?? this.Index)
+                    .Id(id));
+
                 if (!response.Created)
                     throw new BusinessPersistentException("Error on saving the given instance", "Save");
 
@@ -179,7 +182,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             return entity;
         }
 
-        public TEntity Update<TEntity>(TEntity entity, string version = null)
+        public TEntity Update<TEntity>(TEntity entity, string index = null, string version = null)
             where TEntity : class
         {
             if (!this.TranInProgress)
@@ -191,11 +194,11 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (string.IsNullOrWhiteSpace(id))
                 throw new BusinessPersistentException("Impossible to update the given instance because the identifier is missing.", "Update");
 
-            this.UpdateInstance(entity, id, typeName, version);
+            this.UpdateInstance(entity, id, typeName, index, version);
             return entity;
         }
 
-        public TEntity Update<TEntity>(TEntity entity, object id, string version = null)
+        public TEntity Update<TEntity>(TEntity entity, object id, string index = null, string version = null)
             where TEntity : class
         {
             if (!this.TranInProgress)
@@ -205,15 +208,16 @@ namespace PersistentLayer.ElasticSearch.Impl
                 throw new BusinessPersistentException("Impossible to update the given instance because the identifier is missing.", "Update");
 
             var typeName = this.Client.Infer.TypeName<TEntity>();
-            this.UpdateInstance(entity, id.ToString().Trim(), typeName, version);
+            this.UpdateInstance(entity, id.ToString().Trim(), typeName, index, version);
 
             return entity;
         }
 
-        private void UpdateInstance<TEntity>(TEntity entity, string id, string typeName, string version = null)
+        private void UpdateInstance<TEntity>(TEntity entity, string id, string typeName, string index = null, string version = null)
             where TEntity : class
         {
-            var cached = this.localCache.MetadataExpression(infos => infos.FirstOrDefault(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName) && info.Id.Equals(id)));
+            var cached = this.localCache.SingleOrDefault(id, typeName, index);
+
             if (cached != null)
             {
                 // an error because the given instance shouldn't be present twice in the same session context.
@@ -222,32 +226,33 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
             else
             {
-                var response = this.Client.Get<TEntity>(id, this.Index);
+                var response = this.Client.Get<TEntity>(id, index ?? this.Index);
                 if (!response.Found)
                     throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version));
             }
         }
 
-        public IEnumerable<TEntity> MakePersistent<TEntity>(params TEntity[] entities)
+        public IEnumerable<TEntity> MakePersistent<TEntity>(string index = null, params TEntity[] entities)
             where TEntity : class
         {
             foreach (var entity in entities)
             {
-                this.MakePersistent(entity);
+                this.MakePersistent(entity, index);
             }
             return entities;
         }
 
-        public TEntity Save<TEntity>(TEntity entity, object id)
+        public TEntity Save<TEntity>(TEntity entity, object id, string index = null)
             where TEntity : class
         {
             if (!this.TranInProgress)
                 return entity;
 
             var typeName = this.Client.Infer.TypeName<TEntity>();
-            var cached = this.localCache.MetadataExpression(infos => infos.FirstOrDefault(info => info.IndexName.Equals(this.Index) && info.TypeName.Equals(typeName) && info.Id.Equals(id.ToString())));
+            var indexName = index ?? this.Index;
+            var cached = this.localCache.SingleOrDefault(id.ToString(), typeName, indexName);
 
             if (cached != null)
             {
@@ -258,7 +263,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             {
                 var res0 = this.Client.DocumentExists<TEntity>(descriptor => descriptor
                     .Id(id.ToString())
-                    .Index(this.Index));
+                    .Index(indexName));
 
                 if (res0.Exists)
                     throw new DuplicatedInstanceException(string.Format("Impossible to save the given instance because is already present into storage, id: {0}, index: {1}", id, this.Index));
@@ -266,7 +271,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 var response = this.Client.Index(entity, descriptor => descriptor
                     .Id(id.ToString())
                     .Type(typeName)
-                    .Index(this.Index));
+                    .Index(indexName));
 
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
@@ -278,26 +283,26 @@ namespace PersistentLayer.ElasticSearch.Impl
             return entity;
         }
 
-        public void MakeTransient<TEntity>(params TEntity[] entities)
+        public void MakeTransient<TEntity>(string index = null, params TEntity[] entities)
             where TEntity : class
         {
             if (!this.TranInProgress)
                 return;
 
-            this.localCache.Detach(entities);
+            this.localCache.Detach(index ?? this.Index, entities);
         }
 
-        public void MakeTransient<TEntity>(params object[] ids)
+        public void MakeTransient<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
             if (!this.TranInProgress)
                 return;
 
             var local = ids.Select(n => n.ToString());
-            this.localCache.Detach<TEntity>(local.ToArray());
+            this.localCache.Detach<TEntity>(index ?? this.Index, local.ToArray());
         }
 
-        public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate)
+        public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
             where TEntity : class
         {
             //if (!this.TranInProgress)
@@ -306,45 +311,65 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
-        public TEntity RefreshState<TEntity>(TEntity entity, string id = null)
+        public TEntity RefreshState<TEntity>(TEntity entity, string id = null, string index = null)
             where TEntity : class
         {
             id = id ?? this.Client.Infer.Id(entity);
-            var response = this.Client.Get<TEntity>(descriptor => descriptor.Id(id));
+            var typeName = this.Client.Infer.TypeName(entity.GetType());
+            var indexName = index ?? this.Index;
+
+            var response = this.Client.Get<TEntity>(descriptor => descriptor
+                .Id(id)
+                .Type(typeName)
+                .Index(indexName)
+                );
+
             if (!response.Found)
                 throw new ExecutionQueryException("The given instance wasn't found on storage.", "MakeTransient");
 
             if (!this.TranInProgress)
                 return response.Source;
 
-            this.localCache.AttachOrUpdate(response.AsMetadata(this.evaluator, OriginContext.Storage));
-            return entity;
+            var metadata = this.localCache.SingleOrDefault(id, typeName, indexName);
+            var res = response.AsMetadata(this.evaluator, OriginContext.Storage);
+
+            if (metadata == null)
+            {
+                this.localCache.Attach(res);
+                return response.Source;
+            }
+
+            metadata.Update(res);
+            return metadata.Instance as dynamic;
         }
 
-        public IPagedResult<TEntity> GetPagedResult<TEntity>(int startIndex, int pageSize, Expression<Func<TEntity, bool>> predicate) where TEntity : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public IPagedResult<TEntity> GetIndexPagedResult<TEntity>(int pageIndex, int pageSize, Expression<Func<TEntity, bool>> predicate) where TEntity : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public TEntity UniqueResult<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Cached<TEntity>(params object[] ids)
+        public IPagedResult<TEntity> GetPagedResult<TEntity>(int startIndex, int pageSize, Expression<Func<TEntity, bool>> predicate, string index = null)
             where TEntity : class
         {
-            return this.localCache.Cached<TEntity>(ids.Select(n => n.ToString()).ToArray());
+            throw new NotImplementedException();
         }
 
-        public bool Cached(params object[] instances)
+        public IPagedResult<TEntity> GetIndexPagedResult<TEntity>(int pageIndex, int pageSize, Expression<Func<TEntity, bool>> predicate, string index = null)
+            where TEntity : class
         {
-            return this.localCache.Cached(instances);
+            throw new NotImplementedException();
+        }
+
+        public TEntity UniqueResult<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
+            where TEntity : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Cached<TEntity>(string index = null, params object[] ids)
+            where TEntity : class
+        {
+            return this.localCache.Cached<TEntity>(index ?? this.Index, ids.Select(n => n.ToString()).ToArray());
+        }
+
+        public bool Cached(string index = null, params object[] instances)
+        {
+            return this.localCache.Cached(index ?? this.Index, instances);
         }
 
         public bool Dirty(params object[] instances)
@@ -357,15 +382,15 @@ namespace PersistentLayer.ElasticSearch.Impl
             return this.localCache.MetadataExpression(infos => infos.Any(info => info.HasChanged()));
         }
 
-        public void Evict(params object[] instances)
+        public void Evict(string index = null, params object[] instances)
         {
-            this.localCache.Detach(instances);
+            this.localCache.Detach(index ?? this.Index, instances);
         }
 
-        public void Evict<TEntity>(params object[] ids)
+        public void Evict<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            this.localCache.Detach(ids.Select(n => n.ToString()).ToArray());
+            this.localCache.Detach(index ?? this.Index, ids.Select(n => n.ToString()).ToArray());
         }
 
         public void Evict()

@@ -2,32 +2,32 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using Nest;
 using Newtonsoft.Json;
-using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.Exceptions;
 using PersistentLayer.Impl;
 
 namespace PersistentLayer.ElasticSearch.Impl
 {
-    public class EsTransactionProvider
-        : ITransactionProvider
+    public class ElasticTransactionProvider
+        : IElasticTransactionProvider
     {
         /// <summary>
         /// The default naming
         /// </summary>
         private const string DefaultNaming = "anonymous";
         private readonly Stack<ITransactionInfo> transactions;
-        private IElasticClient client;
-        private IElasticSession session;
 
-        public EsTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings)
+        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings)
         {
-            this.client = client;
+            this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
-            this.session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, client);
+            this.Session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, client);
         }
+
+        public IElasticClient Client { get; private set; }
+
+        public IElasticSession Session { get; private set; }
 
         public bool Exists(string name)
         {
@@ -44,7 +44,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public void BeginTransaction(IsolationLevel? level)
         {
-            int index = transactions.Count;
+            int index = this.transactions.Count;
             this.BeginTransaction(string.Format("{0}_{1}", DefaultNaming, index), level);
         }
 
@@ -62,10 +62,10 @@ namespace PersistentLayer.ElasticSearch.Impl
                 throw new BusinessLayerException(string.Format("The transaction name ({0}) to add is used by another point.", name), "BeginTransaction");
 
             int index = this.transactions.Count;
-            
+            ITransactionInfo info = new TransactionInfo(name, index);
+
             if (this.transactions.Count == 0)
-            {
-                ITransactionInfo info = new TransactionInfo(name, index);
+            {    
                 try
                 {
                     //ISession session = this.GetCurrentSession();
@@ -73,7 +73,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                     //    session.BeginTransaction();
                     //else
                     //    session.BeginTransaction(level.Value);
-                    var status = this.client.Ping();
+                    var status = this.Client.Ping();
                     if (!status.ConnectionStatus.Success)
                         throw new BusinessLayerException("The service doesn't respond.", "BeginTransaction");
                 }
@@ -81,24 +81,31 @@ namespace PersistentLayer.ElasticSearch.Impl
                 {
                     throw new BusinessLayerException("Error on beginning a new transaction.", "BeginTransaction", ex);
                 }
-
-                this.transactions.Push(info);
             }
+            this.transactions.Push(info);
         }
 
         public void CommitTransaction()
         {
-            if (this.transactions.Count == 1)
+            if (this.transactions.Count > 0)
             {
-                var info = this.transactions.Peek();
-                try
+                if (this.transactions.Count == 1)
                 {
-                    this.session.Flush();
-                    this.transactions.Pop();
+                    var info = this.transactions.Peek();
+                    try
+                    {
+                        this.Session.Flush();
+                        this.transactions.Pop();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new CommitFailedException(string.Format("Error when the current session tries to commit the current transaction (name: {0}).", info.Name), "CommitTransaction", ex);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    throw new CommitFailedException(string.Format("Error when the current session tries to commit the current transaction (name: {0}).", info.Name), "CommitTransaction", ex);
+                    this.transactions.Pop();
+                    // here, It could wirte into log file this action.
                 }
             }
         }
@@ -112,11 +119,14 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             if (this.transactions.Count > 0)
             {
-                this.session.Evict();
+                this.Session.Evict();
                 var info = this.transactions.Pop();
 
                 if (this.transactions.Count > 0)
+                {
+                    this.Session.Evict();
                     throw new InnerRollBackException("An inner rollback transaction has occurred.", cause, info);
+                }
             }
         }
 

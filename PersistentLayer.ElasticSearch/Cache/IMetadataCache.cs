@@ -23,34 +23,52 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <summary>
         /// Cacheds the specified ids.
         /// </summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="ids">The ids.</param>
-        /// <returns></returns>
-        bool Cached<TEntity>(params string[] ids)
+        /// <typeparam name="TEntity">
+        /// The type of the entity.
+        /// </typeparam>
+        /// <param name="index">
+        /// The index.
+        /// </param>
+        /// <param name="ids">
+        /// The ids.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        bool Cached<TEntity>(string index = null, params string[] ids)
             where TEntity : class;
 
         /// <summary>
         /// Cacheds the specified instance type.
         /// </summary>
         /// <param name="instanceType">Type of the instance.</param>
+        /// <param name="index">Index name which documents will be saved</param>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
-        bool Cached(Type instanceType, params string[] ids);
+        bool Cached(Type instanceType, string index = null, params string[] ids);
 
         /// <summary>
         /// Cacheds the specified type name.
         /// </summary>
-        /// <param name="typeName">Name of the type.</param>
-        /// <param name="ids">The ids.</param>
-        /// <returns></returns>
-        bool Cached(string typeName, params string[] ids);
+        /// <param name="typeName">
+        /// Name of the type.
+        /// </param>
+        /// <param name="index">
+        /// The index.
+        /// </param>
+        /// <param name="ids">
+        /// The ids.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        bool Cached(string typeName, string index = null, params string[] ids);
 
         /// <summary>
         /// Cacheds the specified instances.
         /// </summary>
+        /// <param name="index"></param>
         /// <param name="instances">The instances.</param>
         /// <returns></returns>
-        bool Cached(params object[] instances);
+        bool Cached(string index = null, params object[] instances);
 
         /// <summary>
         /// Finds the first occurrence for the given parameters.
@@ -126,7 +144,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <typeparam name="TEntity">The type of the entity.</typeparam>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
-        bool Detach<TEntity>(params string[] ids)
+        bool Detach<TEntity>(string index = null, params string[] ids)
             where TEntity: class;
 
         /// <summary>
@@ -135,7 +153,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <param name="instanceType">Type of the instance.</param>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
-        bool Detach(Type instanceType, params string[] ids);
+        bool Detach(Type instanceType, string index = null, params string[] ids);
 
         /// <summary>
         /// Detaches the specified type name.
@@ -143,7 +161,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <param name="typeName">Name of the type.</param>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
-        bool Detach(string typeName, params string[] ids);
+        bool Detach(string typeName, string index = null, params string[] ids);
 
         /// <summary>
         /// Detaches the specified instances.
@@ -151,7 +169,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <typeparam name="TEntity">The type of the entity.</typeparam>
         /// <param name="instances">The instances.</param>
         /// <returns></returns>
-        bool Detach<TEntity>(params TEntity[] instances)
+        bool Detach<TEntity>(string index = null, params TEntity[] instances)
             where TEntity : class;
 
         /// <summary>

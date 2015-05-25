@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -93,14 +94,32 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
             Assert.True(cache.Attach(metadata1));
             Assert.False(cache.Attach(metadata1));
             Assert.False(cache.Attach(metadata2));
-            Assert.False(cache.Attach(metadata3));
-            Assert.False(cache.Attach(new MetadataWorker("1", "current_test", "mytype", new object(), evaluator, OriginContext.Storage, 1.ToString(CultureInfo.InvariantCulture))));
+            Assert.True(cache.Attach(metadata3));
+            Assert.True(cache.Attach(new MetadataWorker("1", "current_test", "mytype", new object(), evaluator, OriginContext.Storage, 1.ToString(CultureInfo.InvariantCulture))));
             Assert.True(cache.Attach(new MetadataWorker("2", "current_test", "mytype", new object(), evaluator, OriginContext.Storage, 1.ToString(CultureInfo.InvariantCulture))));
 
             var count = cache.MetadataExpression(workers => workers.Count());
             var count2 = cache.MetadataExpression(workers => workers.Count(), "current_test");
-            Assert.Equal(1, count);
-            Assert.Equal(1, count2);
+            Assert.Equal(4, count);
+            Assert.Equal(2, count2);
         }
+
+        //[Fact]
+        //public void StackTest()
+        //{
+        //    var stack = new Stack<string>();
+        //    stack.Push("first");
+        //    stack.Push("second");
+        //    stack.Push("thirth");
+
+        //    var res = stack.Pop();
+        //    res = stack.Pop();
+        //    res = stack.Pop();
+
+        //    res = stack.Pop();
+        //    res = stack.Pop();
+        //    Assert.Null(res);
+
+        //}
     }
 }
