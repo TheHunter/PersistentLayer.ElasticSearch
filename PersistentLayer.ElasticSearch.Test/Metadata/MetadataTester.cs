@@ -46,13 +46,13 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
             };
 
             var metadata1 = new MetadataWorker("1", "current", "mytype",
-                new Person { Name = "myname" },
+                new Person(1) { Name = "myname" },
                 evaluator,
                 OriginContext.Newone,
                 1.ToString(CultureInfo.InvariantCulture));
 
             var metadata2 = new MetadataWorker("1", "current", "mytype",
-                new Person { Surname = "mysurname_updated" },
+                new Person(1) { Surname = "mysurname_updated" },
                 evaluator,
                 OriginContext.Newone,
                 2.ToString(CultureInfo.InvariantCulture));

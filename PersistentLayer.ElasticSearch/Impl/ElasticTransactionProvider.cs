@@ -65,22 +65,10 @@ namespace PersistentLayer.ElasticSearch.Impl
             ITransactionInfo info = new TransactionInfo(name, index);
 
             if (this.transactions.Count == 0)
-            {    
-                try
-                {
-                    //ISession session = this.GetCurrentSession();
-                    //if (level == null)
-                    //    session.BeginTransaction();
-                    //else
-                    //    session.BeginTransaction(level.Value);
-                    var status = this.Client.Ping();
-                    if (!status.ConnectionStatus.Success)
-                        throw new BusinessLayerException("The service doesn't respond.", "BeginTransaction");
-                }
-                catch (Exception ex)
-                {
-                    throw new BusinessLayerException("Error on beginning a new transaction.", "BeginTransaction", ex);
-                }
+            {
+                var status = this.Client.Ping();
+                if (!status.ConnectionStatus.Success)
+                    throw new BusinessLayerException("The service doesn't respond.", "BeginTransaction");
             }
             this.transactions.Push(info);
         }

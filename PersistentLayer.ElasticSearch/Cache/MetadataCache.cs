@@ -12,6 +12,7 @@ namespace PersistentLayer.ElasticSearch.Cache
     public class MetadataCache
         : IMetadataCache, IDisposable
     {
+        private const string SessionFieldName = "_idsession_";
         // private readonly IdResolver idResolver = new IdResolver();
         private readonly HashSet<IMetadataWorker> localCache;
         private readonly IElasticClient client;
@@ -321,35 +322,6 @@ namespace PersistentLayer.ElasticSearch.Cache
                     response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
         }
 
-        //private void ClearAll()
-        //{
-        //    this.ThrowIfDisposed();
-
-        //    IBulkRequest request = new BulkRequest();
-        //    var toRemove = this.localCache.Where(info => info.Origin == OriginContext.Newone)
-        //        .ToList();
-
-        //    foreach (var metadata in toRemove)
-        //    {
-        //        this.localCache.Remove(metadata);
-        //        if (metadata.Origin == OriginContext.Newone)
-        //        {
-        //            request.Operations.Add(
-        //                new BulkDeleteOperation<object>(metadata.Id)
-        //                {
-        //                    Index = metadata.IndexName,
-        //                    Type = metadata.TypeName,
-        //                    Version = metadata.Version
-        //                });
-        //        }
-        //    }
-
-        //    IBulkResponse response = this.client.Bulk(request);
-        //    if (response.ItemsWithErrors.Any())
-        //        throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
-        //            response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
-        //}
-
         /// <summary>
         /// Gets the cache.
         /// </summary>
@@ -437,7 +409,8 @@ namespace PersistentLayer.ElasticSearch.Cache
                         .Type(current.Type)
                         .Index(this.Index)
                         .Version(Convert.ToInt64(current.Version))
-                        .Script("ctx._source.remove(\"_idsession\")")
+                        //.Script("ctx._source.remove(\"_idsession\")")
+                        .Script(string.Format("ctx._source.remove(\"{0}\")", SessionFieldName))
                         );
 
                     if (respo.IsValid)

@@ -64,6 +64,9 @@
     <Compile Include="Impl\ElasticSession.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Mapping\CustomIdResolver.cs" />
+    <Compile Include="Mapping\DocumentMap.cs" />
+    <Compile Include="Mapping\MapResolver.cs" />
     <Compile Include="Metadata\IMetadataInfo.cs" />
     <Compile Include="Cache\IMetadataCache.cs" />
     <Compile Include="Metadata\IndexMetadataComparer.cs" />
@@ -77,7 +80,6 @@
     <Compile Include="IElasticSession.cs" />
     <Compile Include="Impl\ElasticTransactionProvider.cs" />
     <Compile Include="Impl\ElasticRootPagedDAO.cs" />
-    <Compile Include="Impl\PersistenceResult.cs" />
     <Compile Include="IPersistenceResult.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="Metadata\DocOperationResponse.cs" />
