@@ -16,7 +16,7 @@ namespace PersistentLayer.ElasticSearch.Impl
     public class ElasticSession
         : IElasticSession
     {
-        private const string SessionFieldName = "_idsession_";
+        private const string SessionFieldName = "$idsession";
         private readonly Func<bool> tranInProgress;
         private readonly MetadataCache localCache;
         private readonly MetadataEvaluator evaluator;
@@ -54,8 +54,8 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             var idStr = id.ToString();
             var typeName = this.Client.Infer.TypeName<TEntity>();
-            var metadata = this.localCache.SingleOrDefault(idStr, typeName, this.Index);
             var indexName = index ?? this.Index;
+            var metadata = this.localCache.SingleOrDefault(idStr, typeName, indexName);
 
             if (metadata != null)
                 return metadata.Instance as dynamic;

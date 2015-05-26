@@ -12,7 +12,7 @@ namespace PersistentLayer.ElasticSearch.Cache
     public class MetadataCache
         : IMetadataCache, IDisposable
     {
-        private const string SessionFieldName = "_idsession_";
+        private const string SessionFieldName = "$idsession";
         // private readonly IdResolver idResolver = new IdResolver();
         private readonly HashSet<IMetadataWorker> localCache;
         private readonly IElasticClient client;
@@ -410,7 +410,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                         .Index(this.Index)
                         .Version(Convert.ToInt64(current.Version))
                         //.Script("ctx._source.remove(\"_idsession\")")
-                        .Script(string.Format("ctx._source.remove(\"{0}\")", SessionFieldName))
+                        .Script(string.Format("ctx._source.remove(\"{0}\")", "\\" + SessionFieldName))
                         );
 
                     if (respo.IsValid)

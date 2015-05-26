@@ -59,13 +59,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomNestSerializer.cs" />
+    <Compile Include="Extensions\QueryDescriptorExtension.cs" />
     <Compile Include="IElasticRootPagedDAO.cs" />
     <Compile Include="IElasticTransactionProvider.cs" />
     <Compile Include="Impl\ElasticSession.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mapping\CustomIdResolver.cs" />
-    <Compile Include="Mapping\DocumentMap.cs" />
+    <Compile Include="Mapping\MapConfigurationComparer.cs" />
+    <Compile Include="Mapping\MapDescriptor.cs" />
+    <Compile Include="Mapping\MapConfiguration.cs" />
+    <Compile Include="Mapping\IMapConfiguration.cs" />
     <Compile Include="Mapping\MapResolver.cs" />
     <Compile Include="Metadata\IMetadataInfo.cs" />
     <Compile Include="Cache\IMetadataCache.cs" />
@@ -91,6 +95,7 @@
     <Compile Include="PersistenceType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resolvers\DynamicContractResolver.cs" />
+    <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="PersistentLayer.license.txt" />
