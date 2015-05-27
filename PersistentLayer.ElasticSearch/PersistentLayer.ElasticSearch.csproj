@@ -65,11 +65,15 @@
     <Compile Include="Impl\ElasticSession.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Mapping\CustomIdResolver.cs" />
+    <Compile Include="Mapping\CustomIdResolver.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Mapping\MapConfigurationComparer.cs" />
-    <Compile Include="Mapping\MapDescriptor.cs" />
     <Compile Include="Mapping\MapConfiguration.cs" />
     <Compile Include="Mapping\IMapConfiguration.cs" />
+    <Compile Include="Mapping\MapDescriptor.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Mapping\MapResolver.cs" />
     <Compile Include="Metadata\IMetadataInfo.cs" />
     <Compile Include="Cache\IMetadataCache.cs" />
