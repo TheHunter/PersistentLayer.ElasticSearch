@@ -15,7 +15,7 @@ namespace PersistentLayer.ElasticSearch.Extensions
         /// <summary>
         /// Terms the specified field descriptor.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">Document type</typeparam>
         /// <param name="descriptor">The descriptor.</param>
         /// <param name="fieldDescriptor">The field descriptor.</param>
         /// <param name="findValue">The find value.</param>
@@ -39,7 +39,7 @@ namespace PersistentLayer.ElasticSearch.Extensions
         /// <summary>
         /// Matches the phrase.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">Document type</typeparam>
         /// <param name="descriptor">The descriptor.</param>
         /// <param name="fieldName">Name of the field.</param>
         /// <param name="findValue">The find value.</param>

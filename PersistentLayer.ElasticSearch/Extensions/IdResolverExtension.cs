@@ -10,7 +10,6 @@ namespace PersistentLayer.ElasticSearch.Extensions
 {
     public static class IdResolverExtension
     {
-
         public static bool HasIdProperty<TEntity>(this IdResolver resolver)
         {
             return HasIdProperty(resolver, typeof(TEntity));
@@ -47,7 +46,6 @@ namespace PersistentLayer.ElasticSearch.Extensions
         }
 
         private static PropertyInfo GetPropertyCaseInsensitive(Type type, string propertyName)
-
         {
             return type.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
         }

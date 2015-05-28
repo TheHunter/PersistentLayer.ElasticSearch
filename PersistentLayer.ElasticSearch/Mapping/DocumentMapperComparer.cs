@@ -5,16 +5,16 @@ using System.Text;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
-    public class MapConfigurationComparer
-         : IEqualityComparer<IMapConfiguration>
+    public class DocumentMapperComparer
+         : IEqualityComparer<IDocumentMapper>
     {
 
-        public bool Equals(IMapConfiguration x, IMapConfiguration y)
+        public bool Equals(IDocumentMapper x, IDocumentMapper y)
         {
             return this.GetHashCode(x) == this.GetHashCode(y);
         }
 
-        public int GetHashCode(IMapConfiguration obj)
+        public int GetHashCode(IDocumentMapper obj)
         {
             if (obj == null)
                 throw new ArgumentNullException("obj");

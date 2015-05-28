@@ -223,7 +223,6 @@ namespace PersistentLayer.ElasticSearch.Impl
             var indexName = index ?? this.Index;
             var typeName = this.Client.Infer.TypeName<TEntity>();
 
-
             // prima di effettuare la persistenza del documento, occorre verificare eventuali  
             // documenti duplicati, utilizzando la constraint indicata nel mapping.
             // poi considerare se l'istanza da persistere è già presente nella cache.
