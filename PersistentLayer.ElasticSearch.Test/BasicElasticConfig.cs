@@ -5,7 +5,6 @@ using Nest;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Impl;
 using PersistentLayer.ElasticSearch.Resolvers;
-using Xunit;
 
 namespace PersistentLayer.ElasticSearch.Test
 {
@@ -45,7 +44,7 @@ namespace PersistentLayer.ElasticSearch.Test
 
         protected IElasticTransactionProvider GetProvider(string defaultIndex)
         {
-            return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex), this.MakeJsonSettings(defaultIndex));
+            return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex), this.MakeJsonSettings(defaultIndex), null);
         }
 
         protected IElasticRootPagedDAO<object> MakePagedDao(string defaultIndex)

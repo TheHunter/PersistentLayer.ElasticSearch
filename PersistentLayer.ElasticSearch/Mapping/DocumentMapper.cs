@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
@@ -20,6 +18,11 @@ namespace PersistentLayer.ElasticSearch.Mapping
         public IEnumerable<ElasticProperty> SurrogateKey { get; internal set; }
 
         public KeyGenStrategy Strategy { get; internal set; }
+
+        public bool HasIdProperty
+        {
+            get { return this.Id != null; }
+        }
     }
 
     public interface IDocumentMapper
@@ -31,5 +34,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
         IEnumerable<ElasticProperty> SurrogateKey { get; }
 
         KeyGenStrategy Strategy { get; }
+
+        bool HasIdProperty { get; }
     }
 }

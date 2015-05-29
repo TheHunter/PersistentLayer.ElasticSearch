@@ -40,7 +40,7 @@ namespace PersistentLayer.ElasticSearch
         IEnumerable<TEntity> MakePersistent<TEntity>(string index = null, params TEntity[] entities)
             where TEntity : class;
 
-        TEntity Save<TEntity>(TEntity entity, object id, string index = null)
+        TEntity Save<TEntity>(TEntity entity, string id, string index = null)
             where TEntity : class;
 
         void MakeTransient<TEntity>(string index = null, params TEntity[] entities)

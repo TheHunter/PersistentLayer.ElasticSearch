@@ -9,18 +9,20 @@ namespace PersistentLayer.ElasticSearch.Extensions
 {
     public static class ElasticClientExtension
     {
-        public static bool DocumentExists(this IElasticClient client, IDocumentMapper docMapper, string index, object instance)
+        
+        public static bool DocumentExists(this IElasticClient client,
+            string index, string type, object instance, params ElasticProperty[] properties)
         {
-            if (!docMapper.SurrogateKey.Any())
+            if (properties == null || !properties.Any())
                 return false;
 
             var result = client.Search(delegate(SearchDescriptor<object> descriptor)
             {
                 descriptor.Index(index);
-                descriptor.Type(docMapper.DocumenType);
+                descriptor.Type(type);
                 descriptor.Take(1);
 
-                foreach (var elasticProperty in docMapper.SurrogateKey)
+                foreach (var elasticProperty in properties)
                 {
                     ElasticProperty property = elasticProperty;
                     var propertyValue = property.ValueFunc.Invoke(instance).ToString();

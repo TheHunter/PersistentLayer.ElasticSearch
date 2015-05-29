@@ -25,7 +25,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             this.inferrer = inferrer;
         }
 
-        public DocumentMapResolver RegisterMap(IDocumentMapper mapConfiguration)
+        public DocumentMapResolver Register(IDocumentMapper mapConfiguration)
         {
             this.mappers.Add(mapConfiguration);
             return this;
@@ -44,15 +44,14 @@ namespace PersistentLayer.ElasticSearch.Mapping
             {
                 // occorre prepararne uno nuovo...
                 var property = this.idResolver.GetPropertyInfo(documenType);
-                if (property != null)
+                current = new DocumentMapper(documenType)
                 {
-                    current = new DocumentMapper(documenType)
-                    {
-                        DocumenType = documenType,
-                        Id = new ElasticProperty(property, this.inferrer.PropertyName(property), instance => property.MakeGetter().DynamicInvoke(instance)),
-                        Strategy = KeyGenStrategy.Native
-                    };
-                }
+                    DocumenType = documenType,
+                    Id = property == null ? null
+                                    : new ElasticProperty(property, this.inferrer.PropertyName(property), instance => property.MakeGetter().DynamicInvoke(instance)),
+                    Strategy = KeyGenStrategy.Native
+                };
+                this.mappers.Add(current);
             }
             return current;
         }

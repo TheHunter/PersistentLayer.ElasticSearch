@@ -11,7 +11,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
     public enum KeyGenStrategy
     {
         /// <summary>
-        /// The native strategy.
+        /// The native strategy generation.
         /// </summary>
         Native,
 

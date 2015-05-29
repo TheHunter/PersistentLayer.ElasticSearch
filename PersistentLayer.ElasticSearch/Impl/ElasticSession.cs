@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,6 +9,7 @@ using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Exceptions;
 using PersistentLayer.ElasticSearch.Extensions;
+using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.ElasticSearch.Metadata;
 using PersistentLayer.Exceptions;
 
@@ -20,13 +22,14 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly Func<bool> tranInProgress;
         private readonly MetadataCache localCache;
         private readonly MetadataEvaluator evaluator;
-        
+        private readonly DocumentMapResolver mapResolver;
 
-        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, IElasticClient client)
+        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, DocumentMapResolver mapResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
             this.tranInProgress = tranInProgress;
+            this.mapResolver = mapResolver;
             this.Client = client;
             
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
@@ -86,7 +89,6 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             if (!firstRequest.IsValid || !searchRequest.IsValid || !searchRequest.Hits.Any())
                 return null;
-                //throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "FindBy");
 
             if (this.TranInProgress)
                 this.localCache.Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage));
@@ -115,7 +117,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                     idsToHit.Add(id);
             }
 
-            //var response = this.Client.GetMany<TEntity>(idsToHit, indexName).Where(n => n.Found).ToArray();
             var response = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(indexName)
                 .Type(typeName)
@@ -184,18 +185,19 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool Exists<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
+            // A document can already exist, but is only visible by transaction owner.
             var request = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(index ?? this.Index)
                 .Query(q => q.Ids(ids.Select(n => n.ToString())))
                 .Source(false)
-                .Filter(fd => fd
-                    .Or(fd1 => fd1.Missing(SessionFieldName),
-                        fd2 => fd2.And(
-                            fd22 => fd22.Exists(SessionFieldName),
-                            fd23 => fd23.Term(SessionFieldName, this.Id)
-                        )
-                    )
-                )
+                //.Filter(fd => fd
+                //    .Or(fd1 => fd1.Missing(SessionFieldName),
+                //        fd2 => fd2.And(
+                //            fd22 => fd22.Exists(SessionFieldName),
+                //            fd23 => fd23.Term(SessionFieldName, this.Id)
+                //        )
+                //    )
+                //)
                 );
 
             return request.Hits.Count() == ids.Length;
@@ -219,27 +221,50 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return entity;
 
-            var id = this.Client.Infer.Id(entity);
+            var docMapper = this.mapResolver.Resolve<TEntity>();
+
+            var id = docMapper.HasIdProperty ? docMapper.Id.ValueFunc.Invoke(entity).ToString() : null;
             var indexName = index ?? this.Index;
             var typeName = this.Client.Infer.TypeName<TEntity>();
 
-            // prima di effettuare la persistenza del documento, occorre verificare eventuali  
-            // documenti duplicati, utilizzando la constraint indicata nel mapping.
-            // poi considerare se l'istanza da persistere è già presente nella cache.
-
             if (string.IsNullOrWhiteSpace(id))
             {
-                var response = this.Client.Index(entity, descriptor => descriptor
-                    .Index(indexName)
-                    .Type(typeName)
-                    .Id(id));
+                if (docMapper.SurrogateKey != null)
+                {
+                    var surrogateKey = docMapper.SurrogateKey.ToArray();
+                    var exists = this.Client.DocumentExists(indexName, typeName, entity, surrogateKey);
+                    if (exists)
+                        throw new DuplicatedInstanceException(
+                            string.Format(
+                                "Impossible to save the given instance because there's an instance with the given constraint, document type: {0}",
+                                typeName));
 
-                if (!response.Created)
-                    throw new BusinessPersistentException("Error on saving the given instance", "Save");
+                    switch (docMapper.Strategy)
+                    {
+                        case KeyGenStrategy.Assigned:
+                        {
+                            throw new MissingPrimaryKeyException("The given document doesn't have any identifier set.");
+                        }
+                        case KeyGenStrategy.Identity:
+                        {
+                            break;
+                        }
+                        case KeyGenStrategy.Native:
+                        {
+                            var response = this.Client.Index(entity, descriptor => descriptor
+                                    .Type(typeName)
+                                    .Index(indexName));
 
-                //this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, this.AsDynamicDoc(entity)));
-                return entity;
+                            if (!response.Created)
+                                throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
+
+                            this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, this.AsDynamicDoc(entity)));
+                            
+                            return entity;
+                        }
+                    }
+                    return this.Save(entity, id, indexName);
+                }
             }
 
             this.UpdateInstance(entity, id, typeName);
@@ -308,13 +333,13 @@ namespace PersistentLayer.ElasticSearch.Impl
             return entities;
         }
 
-        public TEntity Save<TEntity>(TEntity entity, object id, string index = null)
+        public TEntity Save<TEntity>(TEntity entity, string id, string index = null)
             where TEntity : class
         {
             if (!this.TranInProgress)
                 return entity;
 
-            var idStr = id.ToString();
+            var idStr = id;
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
             var cached = this.localCache.SingleOrDefault(idStr, typeName, indexName);
