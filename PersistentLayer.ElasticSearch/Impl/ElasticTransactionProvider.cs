@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.Exceptions;
 using PersistentLayer.Impl;
+using PersistentLayer.ElasticSearch.KeyGeneration;
 
 namespace PersistentLayer.ElasticSearch.Impl
 {
@@ -19,11 +20,11 @@ namespace PersistentLayer.ElasticSearch.Impl
         private const string DefaultNaming = "anonymous";
         private readonly Stack<ITransactionInfo> transactions;
 
-        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, DocumentMapResolver mapResolver)
+        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, DocumentMapResolver mapResolver)
         {
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
-            this.Session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, client);
+            this.Session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, keyResolver, client);
         }
 
         public IElasticClient Client { get; private set; }

@@ -16,28 +16,18 @@ namespace PersistentLayer.ElasticSearch.Mapping
         private readonly List<Action<DocumentMapper>> actions;
         private readonly ElasticInferrer inferrer;
 
-        internal MapperDescriptor(ElasticInferrer inferrer)
+        public MapperDescriptor(ElasticInferrer inferrer)
         {
             this.actions = new List<Action<DocumentMapper>>();
             this.inferrer = inferrer;
         }
 
-        /// <summary>
-        /// Makes a map descriptor for the given document type.
-        /// </summary>
-        /// <param name="inferrer">
-        /// The inferrer.
-        /// </param>
-        /// <typeparam name="TInstance">
-        /// The type of the document.
-        /// </typeparam>
-        /// <returns>
-        /// </returns>
-        public static MapperDescriptor<TInstance> For<TInstance>(ElasticInferrer inferrer)
-            where TInstance : class
-        {
-            return new MapperDescriptor<TInstance>(inferrer);
-        }
+        
+        //public static MapperDescriptor<TInstance> For<TInstance>(ElasticInferrer inferrer)
+        //    where TInstance : class
+        //{
+        //    return new MapperDescriptor<TInstance>(inferrer);
+        //}
 
         /// <summary>
         /// Identifiers the specified document expression.

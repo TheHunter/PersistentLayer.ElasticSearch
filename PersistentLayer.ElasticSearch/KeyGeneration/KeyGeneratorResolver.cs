@@ -49,24 +49,28 @@ namespace PersistentLayer.ElasticSearch.KeyGeneration
         /// </summary>
         /// <param name="typeId">The type identifier.</param>
         /// <returns></returns>
-        /// <exception cref="InvalidIdentifierException"></exception>
+        /// <exception cref="InvalidIdentifierException">Error</exception>
         public IKeyGenerator Resolve(Type typeId)
         {
             var keyGenerator = this.keyGenerators.FirstOrDefault(generator => generator.KeyType == typeId);
             if (keyGenerator == null)
             {
-                if (typeId == typeof(int) || typeId == typeof(int?))
-                {
-                    keyGenerator = new IntKeyGenerator(0);
-                }
-                else if (typeId == typeof(long) || typeId == typeof(long?))
-                {
-                    keyGenerator = new LongKeyGenerator(0);
-                }
-                else
-                {
-                    throw new InvalidIdentifierException(string.Format("The type of key generation cannot be resolved because the key type is not registered and cannot be resolved by this framework, It's needed to define a newone in order to register, type: {0}", typeId.Name));
-                }
+                #region
+                //if (typeId == typeof(int) || typeId == typeof(int?))
+                //{
+                //    keyGenerator = new IntKeyGenerator(0);
+                //}
+                //else if (typeId == typeof(long) || typeId == typeof(long?))
+                //{
+                //    keyGenerator = new LongKeyGenerator(0);
+                //}
+                //else
+                //{
+                //    throw new InvalidIdentifierException(string.Format("The type of key generation cannot be resolved because the key type is not registered and cannot be resolved by this framework, It's needed to define a newone in order to register, type: {0}", typeId.Name));
+                //}
+                #endregion
+
+                throw new InvalidIdentifierException(string.Format("The type of key generation cannot be resolved because the key type is not registered and cannot be resolved by this framework, It's needed to define a newone in order to register, type: {0}", typeId.Name));
             }
             return keyGenerator;
         }

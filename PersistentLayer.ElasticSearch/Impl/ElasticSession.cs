@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Exceptions;
 using PersistentLayer.ElasticSearch.Extensions;
+using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.ElasticSearch.Metadata;
 using PersistentLayer.Exceptions;
@@ -23,13 +24,15 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly MetadataCache localCache;
         private readonly MetadataEvaluator evaluator;
         private readonly DocumentMapResolver mapResolver;
+        private readonly KeyGeneratorResolver keyResolver;
 
-        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, DocumentMapResolver mapResolver, IElasticClient client)
+        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, DocumentMapResolver mapResolver, KeyGeneratorResolver keyResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
             this.tranInProgress = tranInProgress;
             this.mapResolver = mapResolver;
+            this.keyResolver = keyResolver;
             this.Client = client;
             
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
@@ -247,7 +250,15 @@ namespace PersistentLayer.ElasticSearch.Impl
                         }
                         case KeyGenStrategy.Identity:
                         {
-                            break;
+                            var keyResolver = docMapper.HasIdProperty
+                                ? this.keyResolver.Resolve(docMapper.Id.Property.PropertyType)
+                                : this.keyResolver.Resolve<long>();
+
+                            if (keyResolver == null)
+                                throw new BusinessPersistentException("The given document cannot be saved because wasn't configured any kind of key identity generator", "MakePersistent");
+
+                            var key = keyResolver.NextOne();
+                            return this.Save(entity, key.ToString(), index);
                         }
                         case KeyGenStrategy.Native:
                         {

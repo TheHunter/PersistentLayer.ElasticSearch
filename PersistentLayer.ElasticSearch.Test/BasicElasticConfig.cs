@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Autofac;
+using Autofac.Core;
 using Nest;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Impl;
+using PersistentLayer.ElasticSearch.KeyGeneration;
+using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.ElasticSearch.Resolvers;
+using PersistentLayer.ElasticSearch.Test.Documents;
 
 namespace PersistentLayer.ElasticSearch.Test
 {
@@ -16,7 +20,6 @@ namespace PersistentLayer.ElasticSearch.Test
         {
             var builder = new ContainerBuilder();
             const string uri = "http://localhost:9200";
-            //const string defaultIndex = "local";
 
             builder.Register(context => new Uri(uri))
                 .AsSelf();
@@ -28,23 +31,46 @@ namespace PersistentLayer.ElasticSearch.Test
             }
                 );
 
+            builder.RegisterType<KeyGeneratorResolver>()
+                .SingleInstance()
+                .AsSelf()
+                .OnActivated(args => args.Instance
+                    .Register(new IntKeyGenerator(0))
+                    .Register(new LongKeyGenerator(0))
+                    )
+                ;
+
+            builder.RegisterType<ElasticInferrer>()
+                .AsSelf();
+
+            builder.RegisterType<DocumentMapResolver>()
+                .SingleInstance()
+                .AsSelf()
+                .OnActivated(delegate(IActivatedEventArgs<DocumentMapResolver> args)
+                {
+                    var instance = args.Instance;
+                    instance.Register(
+                        (new MapperDescriptor<Person>(args.Context.Resolve<ElasticInferrer>()))
+                            .SurrogateKey(person => person.Cf)
+                            .Build()
+                        );
+                });
+
             this.container = builder.Build();
         }
         
-
         protected ConnectionSettings MakeSettings(string defaultIndex)
         {
-            //var uri = new Uri("http://localhost:9200");
-            //var settings = new ConnectionSettings(uri, defaultIndex);
-            //return settings;
-
             return this.container.Resolve<Func<string, ConnectionSettings>>()
                 .Invoke(defaultIndex);
         }
 
         protected IElasticTransactionProvider GetProvider(string defaultIndex)
         {
-            return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex), this.MakeJsonSettings(defaultIndex), null);
+            return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex),
+                this.MakeJsonSettings(defaultIndex),
+                this.container.Resolve<KeyGeneratorResolver>(),
+                this.container.Resolve<DocumentMapResolver>());
         }
 
         protected IElasticRootPagedDAO<object> MakePagedDao(string defaultIndex)
