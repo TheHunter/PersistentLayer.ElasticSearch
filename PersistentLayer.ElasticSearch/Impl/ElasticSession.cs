@@ -24,15 +24,16 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly MetadataCache localCache;
         private readonly MetadataEvaluator evaluator;
         private readonly DocumentMapResolver mapResolver;
-        private readonly KeyGeneratorResolver keyResolver;
+        private readonly KeyGeneratorResolver keyStrategyResolver;
+        private readonly HashSet<ElasticKeyGenerator> keyGenerators;
 
-        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, DocumentMapResolver mapResolver, KeyGeneratorResolver keyResolver, IElasticClient client)
+        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, DocumentMapResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
             this.tranInProgress = tranInProgress;
             this.mapResolver = mapResolver;
-            this.keyResolver = keyResolver;
+            this.keyStrategyResolver = keyStrategyResolver;
             this.Client = client;
             
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
@@ -42,6 +43,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 Serializer = serializer,
                 Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest)
             };
+
+            this.keyGenerators = new HashSet<ElasticKeyGenerator>();
         }
 
         public string Id { get; private set; }
@@ -242,25 +245,23 @@ namespace PersistentLayer.ElasticSearch.Impl
                                 "Impossible to save the given instance because there's an instance with the given constraint, document type: {0}",
                                 typeName));
 
-                    switch (docMapper.Strategy)
+                    switch (docMapper.Type)
                     {
-                        case KeyGenStrategy.Assigned:
+                        case KeyGenType.Assigned:
                         {
                             throw new MissingPrimaryKeyException("The given document doesn't have any identifier set.");
                         }
-                        case KeyGenStrategy.Identity:
+                        case KeyGenType.Identity:
                         {
-                            var keyResolver = docMapper.HasIdProperty
-                                ? this.keyResolver.Resolve(docMapper.Id.Property.PropertyType)
-                                : this.keyResolver.Resolve<long>();
+                            var keyGenerator = this.GetKeyGenerator(index, typeName, typeof(TEntity), docMapper);
 
-                            if (keyResolver == null)
+                            if (keyGenerator == null)
                                 throw new BusinessPersistentException("The given document cannot be saved because wasn't configured any kind of key identity generator", "MakePersistent");
 
-                            var key = keyResolver.NextOne();
+                            var key = keyGenerator.Next();
                             return this.Save(entity, key.ToString(), index);
                         }
-                        case KeyGenStrategy.Native:
+                        case KeyGenType.Native:
                         {
                             var response = this.Client.Index(entity, descriptor => descriptor
                                     .Type(typeName)
@@ -514,6 +515,31 @@ namespace PersistentLayer.ElasticSearch.Impl
         private object AsDynamicDoc(object instance)
         {
             return instance.AsDynamic(new KeyValuePair<string, object>(SessionFieldName, this.Id));
+        }
+
+        private ElasticKeyGenerator GetKeyGenerator(string index, string typeName, Type type, IDocumentMapper docMapper)
+        {
+            var current =
+                this.keyGenerators.FirstOrDefault(
+                    generator => generator.Index.Equals(index, StringComparison.InvariantCulture)
+                        && generator.TypeName.Equals(typeName, StringComparison.InvariantCulture)
+                        && generator.KeyType == type
+                    );
+
+            if (current == null)
+            {
+                var keyGenStrategy = docMapper.HasIdProperty
+                    ? this.keyStrategyResolver.Resolve(docMapper.Id.Property.PropertyType)
+                    : this.keyStrategyResolver.Resolve<long>();
+
+                if (keyGenStrategy == null)
+                    throw new BusinessPersistentException(string.Format("No key generation strategy was founded, KeyType: {0}", type.Name), "GetKeyGenerator");
+
+                current = new ElasticKeyGenerator(null, 0, index, typeName);
+                this.keyGenerators.Add(current);
+            }
+
+            return current;
         }
     }
 }

@@ -66,12 +66,11 @@
     <Compile Include="Impl\ElasticSession.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="KeyGeneration\ExternalKeyGenerator.cs" />
-    <Compile Include="KeyGeneration\KeyGenerator.cs" />
-    <Compile Include="KeyGeneration\IntKeyGenerator.cs" />
-    <Compile Include="KeyGeneration\KeyGeneratorComparer.cs" />
+    <Compile Include="KeyGeneration\ElasticKeyGenerator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="KeyGeneration\KeyGenStrategy.cs" />
     <Compile Include="KeyGeneration\KeyGeneratorResolver.cs" />
-    <Compile Include="KeyGeneration\LongKeyGenerator.cs" />
     <Compile Include="Mapping\CustomIdResolver.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -82,7 +81,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mapping\ElasticProperty.cs" />
-    <Compile Include="Mapping\KeyGenStrategy.cs" />
+    <Compile Include="Mapping\KeyGenType.cs" />
     <Compile Include="Mapping\DocumentMapperComparer.cs" />
     <Compile Include="Mapping\MapperDescriptor.cs">
       <SubType>Code</SubType>

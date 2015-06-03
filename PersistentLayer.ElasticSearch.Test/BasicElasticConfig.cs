@@ -35,8 +35,8 @@ namespace PersistentLayer.ElasticSearch.Test
                 .SingleInstance()
                 .AsSelf()
                 .OnActivated(args => args.Instance
-                    .Register(new IntKeyGenerator(0))
-                    .Register(new LongKeyGenerator(0))
+                    .Register(KeyGenStrategy.Of<int>(i => ++i))
+                    .Register(KeyGenStrategy.Of<long>(i => ++i))
                     )
                 ;
 

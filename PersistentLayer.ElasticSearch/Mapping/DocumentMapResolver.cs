@@ -49,7 +49,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
                     DocumenType = documenType,
                     Id = property == null ? null
                                     : new ElasticProperty(property, this.inferrer.PropertyName(property), instance => property.MakeGetter().DynamicInvoke(instance)),
-                    Strategy = KeyGenStrategy.Native
+                    Type = KeyGenType.Native
                 };
                 this.mappers.Add(current);
             }

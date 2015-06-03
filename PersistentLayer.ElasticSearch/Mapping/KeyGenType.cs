@@ -8,7 +8,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
     /// <summary>
     /// Indicates the key generation strategy for documents.
     /// </summary>
-    public enum KeyGenStrategy
+    public enum KeyGenType
     {
         /// <summary>
         /// The native strategy generation.
