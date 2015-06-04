@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Nest;
+using Nest.Resolvers;
+using PersistentLayer.ElasticSearch.Extensions;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
@@ -11,23 +13,20 @@ namespace PersistentLayer.ElasticSearch.Mapping
     /// </summary>
     /// <typeparam name="TDocument">The type of the document.</typeparam>
     public class MapperDescriptor<TDocument>
+        : IDocumentMapBuilder
         where TDocument : class
     {
         private readonly List<Action<DocumentMapper>> actions;
         private readonly ElasticInferrer inferrer;
+        private readonly IdResolver idResolver = new IdResolver();
+        private readonly Type docType;
 
         public MapperDescriptor(ElasticInferrer inferrer)
         {
             this.actions = new List<Action<DocumentMapper>>();
             this.inferrer = inferrer;
+            this.docType = typeof(TDocument);
         }
-
-        
-        //public static MapperDescriptor<TInstance> For<TInstance>(ElasticInferrer inferrer)
-        //    where TInstance : class
-        //{
-        //    return new MapperDescriptor<TInstance>(inferrer);
-        //}
 
         /// <summary>
         /// Identifiers the specified document expression.
@@ -52,6 +51,34 @@ namespace PersistentLayer.ElasticSearch.Mapping
             return this;
         }
 
+        public MapperDescriptor<TDocument> SetProperty(Action<IDocumentMapper> action)
+        {
+            this.actions.Add(action.Invoke);
+            return this;
+        }
+
+        Type IDocumentMapBuilder.DocumenType
+        {
+            get { return this.docType; }
+        }
+
+        IDocumentMapper IDocumentMapBuilder.Build(KeyGenType keyGenType)
+        {
+            var ret = new DocumentMapper(typeof(TDocument));
+            this.actions.ForEach(action => action.Invoke(ret));
+            if (ret.Id != null)
+            {
+                var property = this.idResolver.GetPropertyInfo(typeof(TDocument));
+                if (property != null)
+                {
+                    ret.Id = new ElasticProperty(property, this.inferrer.PropertyName(property),
+                        instance => property.MakeGetter().DynamicInvoke(instance));
+                }
+            }
+            ret.KeyGenType = keyGenType;
+            return ret;
+        }
+
         /// <summary>
         /// Makes the property.
         /// </summary>
@@ -63,25 +90,6 @@ namespace PersistentLayer.ElasticSearch.Mapping
             return new ElasticProperty(property,
                 this.inferrer.PropertyName(property),
                 instance => docExpression.Compile().Invoke(instance as dynamic));
-        }
-
-        /// <summary>
-        /// Builds this instance.
-        /// </summary>
-        /// <returns></returns>
-        public IDocumentMapper Build()
-        {
-            var ret = new DocumentMapper(typeof(TDocument));
-            this.actions.ForEach(action => action.Invoke(ret));
-            return ret;
-        }
-
-        /// <summary>
-        /// Resets this instance.
-        /// </summary>
-        public void Reset()
-        {
-            this.actions.Clear();
         }
     }
 }

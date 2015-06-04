@@ -43,16 +43,15 @@ namespace PersistentLayer.ElasticSearch.Test
             builder.RegisterType<ElasticInferrer>()
                 .AsSelf();
 
-            builder.RegisterType<DocumentMapResolver>()
+            builder.RegisterType<MapperDescriptorResolver>()
                 .SingleInstance()
                 .AsSelf()
-                .OnActivated(delegate(IActivatedEventArgs<DocumentMapResolver> args)
+                .OnActivated(delegate(IActivatedEventArgs<MapperDescriptorResolver> args)
                 {
                     var instance = args.Instance;
                     instance.Register(
                         (new MapperDescriptor<Person>(args.Context.Resolve<ElasticInferrer>()))
                             .SurrogateKey(person => person.Cf)
-                            .Build()
                         );
                 });
 
@@ -70,7 +69,7 @@ namespace PersistentLayer.ElasticSearch.Test
             return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex),
                 this.MakeJsonSettings(defaultIndex),
                 this.container.Resolve<KeyGeneratorResolver>(),
-                this.container.Resolve<DocumentMapResolver>());
+                this.container.Resolve<MapperDescriptorResolver>());
         }
 
         protected IElasticRootPagedDAO<object> MakePagedDao(string defaultIndex)

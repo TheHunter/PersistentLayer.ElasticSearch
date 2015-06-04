@@ -58,7 +58,7 @@ namespace PersistentLayer.ElasticSearch
         /// <summary>
         /// Types to inspect.
         /// </summary>
-        /// <param name="dataType">Type of the data.</param>
+        /// <param name="dataType">KeyGenType of the data.</param>
         /// <returns></returns>
         private bool TypeToInspect(Type dataType)
         {

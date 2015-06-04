@@ -77,7 +77,8 @@
     <Compile Include="Mapping\DocumentMapper.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Mapping\DocumentMapResolver.cs">
+    <Compile Include="Mapping\IDocumentMapBuilder.cs" />
+    <Compile Include="Mapping\MapperDescriptorResolver.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mapping\ElasticProperty.cs" />

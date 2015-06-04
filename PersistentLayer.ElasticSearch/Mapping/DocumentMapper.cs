@@ -17,12 +17,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         public IEnumerable<ElasticProperty> SurrogateKey { get; internal set; }
 
-        public KeyGenType Type { get; internal set; }
-
-        public bool HasIdProperty
-        {
-            get { return this.Id != null; }
-        }
+        public KeyGenType KeyGenType { get; set; }
     }
 
     public interface IDocumentMapper
@@ -33,8 +28,6 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         IEnumerable<ElasticProperty> SurrogateKey { get; }
 
-        KeyGenType Type { get; }
-
-        bool HasIdProperty { get; }
+        KeyGenType KeyGenType { get; set; }
     }
 }

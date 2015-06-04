@@ -40,7 +40,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <summary>
         /// Cacheds the specified instance type.
         /// </summary>
-        /// <param name="instanceType">Type of the instance.</param>
+        /// <param name="instanceType">KeyGenType of the instance.</param>
         /// <param name="index">Index name which documents will be saved</param>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
@@ -150,7 +150,7 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <summary>
         /// Detaches the specified instance type.
         /// </summary>
-        /// <param name="instanceType">Type of the instance.</param>
+        /// <param name="instanceType">KeyGenType of the instance.</param>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
         bool Detach(Type instanceType, string index = null, params string[] ids);

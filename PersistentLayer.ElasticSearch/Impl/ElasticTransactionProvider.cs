@@ -20,7 +20,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private const string DefaultNaming = "anonymous";
         private readonly Stack<ITransactionInfo> transactions;
 
-        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, DocumentMapResolver mapResolver)
+        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver)
         {
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
