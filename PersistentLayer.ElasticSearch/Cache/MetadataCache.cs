@@ -352,8 +352,9 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
             IBulkRequest request = new BulkRequest();
+            request.Operations = new List<IBulkOperation>();
 
-            var metadataToPersist = this.GetCache(null, cond: info => info.HasChanged())
+            var metadataToPersist = this.GetCache(null, info => info.Origin == OriginContext.Newone || info.HasChanged())
                 .ToList();
 
             if (!metadataToPersist.Any())
@@ -367,7 +368,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                         Index = metadata.IndexName,
                         Type = metadata.TypeName,
                         Version = metadata.Version,
-                        Doc = metadata.Instance
+                        Doc = metadata.Instance,
                     }
                     );
             }
@@ -401,6 +402,8 @@ namespace PersistentLayer.ElasticSearch.Cache
                 if (metadata == null)
                     continue;
 
+                #region
+                
                 if (metadata.Origin == OriginContext.Newone)
                 {
                     BulkOperationResponseItem current = item;
@@ -409,7 +412,6 @@ namespace PersistentLayer.ElasticSearch.Cache
                         .Type(current.Type)
                         .Index(this.Index)
                         .Version(Convert.ToInt64(current.Version))
-                        //.Script("ctx._source.remove(\"_idsession\")")
                         .Script(string.Format("ctx._source.remove(\"{0}\")", "\\" + SessionFieldName))
                         );
 
@@ -427,6 +429,9 @@ namespace PersistentLayer.ElasticSearch.Cache
                     metadata.BecomePersistent(item.Version);
                 }
                 
+                #endregion
+
+                metadata.BecomePersistent(item.Version);
             }
         }
 

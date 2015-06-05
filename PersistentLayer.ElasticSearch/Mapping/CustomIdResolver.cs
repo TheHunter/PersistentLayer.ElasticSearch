@@ -18,16 +18,16 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         public bool HasIdProperty(Type type)
         {
-            var prop = this.IdInfo(type);
+            var prop = this.GetPropertyInfo(type);
             return prop != null;
         }
 
-        public PropertyInfo IdInfo<TEntity>()
+        public PropertyInfo GetPropertyInfo<TEntity>()
         {
-            return this.IdInfo(typeof(TEntity));
+            return this.GetPropertyInfo(typeof(TEntity));
         }
 
-        public PropertyInfo IdInfo(Type type)
+        public PropertyInfo GetPropertyInfo(Type type)
         {
             ElasticTypeAttribute elasticTypeAttribute = ElasticAttributes.Type(type);
             if (elasticTypeAttribute != null && !string.IsNullOrWhiteSpace(elasticTypeAttribute.IdProperty))

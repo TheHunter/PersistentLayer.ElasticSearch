@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -19,6 +20,7 @@ namespace PersistentLayer.ElasticSearch.Resolvers
     {
         private static readonly Type DynamicType;
         private readonly List<MemberInfo> members;
+        private readonly ElasticInferrer inferrer;
 
         /// <summary>
         /// 
@@ -36,6 +38,7 @@ namespace PersistentLayer.ElasticSearch.Resolvers
             : base(connectionSettings)
         {
             this.members = new List<MemberInfo>();
+            this.inferrer = new ElasticInferrer(connectionSettings);
         }
 
         /// <summary>
@@ -56,11 +59,22 @@ namespace PersistentLayer.ElasticSearch.Resolvers
                  * per tutti i membri dell'istanza dinamica,
                  * altrimenti i membri non etichettati non verrebbero serializzati.
             */
+            
             dynamic ctr = contract;
-            foreach (var prop in ctr.Properties)
+            
+            if (contract is JsonDynamicContract)
             {
-                prop.HasMemberAttribute = true;
+                foreach (var prop in ctr.Properties)
+                {
+                    prop.HasMemberAttribute = true;
+                }
             }
+            else if (contract is JsonDictionaryContract)
+            {
+                Func<string, string> func = propertyName => this.inferrer.IndexName(propertyName).ToLower(CultureInfo.InvariantCulture);
+                ctr.PropertyNameResolver = func;
+            }
+            
             return contract;
         }
 

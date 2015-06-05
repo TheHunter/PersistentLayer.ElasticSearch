@@ -9,7 +9,7 @@ namespace PersistentLayer.ElasticSearch
 {
     public static class Util
     {
-        private static Type FunctionGetter;
+        private static readonly Type FunctionGetter;
 
         static Util()
         {
@@ -54,6 +54,15 @@ namespace PersistentLayer.ElasticSearch
             MethodInfo getterMethod = property.GetGetMethod() ?? property.GetGetMethod(true);
             Delegate getter = Delegate.CreateDelegate(funcType, null, getterMethod);
             return getter;
+        }
+
+        public static object GetDefaultValue(this Type type)
+        {
+            if (type.Name.StartsWith("Nullable") && type.IsGenericType)
+                type = type.GetGenericArguments().First();
+
+            var ret = Activator.CreateInstance(type, true);
+            return ret;
         }
     }
 }

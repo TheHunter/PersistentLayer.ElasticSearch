@@ -11,6 +11,20 @@ namespace PersistentLayer.ElasticSearch.KeyGeneration
 
         public ElasticKeyGenerator(KeyGenStrategy keyGen, object lastValue, string index, string typeName)
         {
+            if (keyGen == null)
+                throw new ArgumentNullException("keyGen");
+
+            lastValue = lastValue ?? keyGen.KeyType.GetDefaultValue();
+
+            if (lastValue == null)
+                throw new ArgumentNullException("lastValue");
+
+            if (string.IsNullOrWhiteSpace(index))
+                throw new ArgumentException("Index name not valid.", "index");
+
+            if (string.IsNullOrWhiteSpace(typeName))
+                throw new ArgumentException("Type name not valid.", "typeName");
+
             this.keyGen = keyGen;
             this.Index = index;
             this.TypeName = typeName;

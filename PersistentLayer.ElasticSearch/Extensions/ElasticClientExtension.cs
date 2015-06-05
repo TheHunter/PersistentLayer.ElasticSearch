@@ -19,19 +19,26 @@ namespace PersistentLayer.ElasticSearch.Extensions
             if (properties == null || !properties.Any())
                 return false;
 
+            var list = new List<KeyValuePair<string, string>>();
+            foreach (var elasticProperty in properties)
+            {
+                ElasticProperty property = elasticProperty;
+                var propertyValue = property.GetValue<string>(instance);
+                if (propertyValue == null)
+                    return false;
+                list.Add(new KeyValuePair<string, string>(property.ElasticName, propertyValue));
+            }
+
             var result = client.Search(delegate(SearchDescriptor<object> descriptor)
             {
                 descriptor.Index(index);
                 descriptor.Type(type);
                 descriptor.Take(1);
 
-                foreach (var elasticProperty in properties)
+                foreach (var current in list)
                 {
-                    ElasticProperty property = elasticProperty;
-                    var propertyValue = property.ValueFunc.Invoke(instance).ToString();
-
-                    descriptor.Query(qd => qd.Match(qdd => qdd.Query(propertyValue)
-                        .OnField(property.ElasticName)
+                    descriptor.Query(qd => qd.Match(qdd => qdd.Query(current.Value)
+                        .OnField(current.Key)
                         ));
                 }
                 return descriptor;
@@ -116,7 +123,10 @@ namespace PersistentLayer.ElasticSearch.Extensions
             if (agg == null)
                 return null;
 
-            var value = agg.Value.GetValueOrDefault();
+            if (!agg.Value.HasValue)
+                return null;
+
+            var value = agg.Value.Value;
             if (value.GetType() == property.Property.PropertyType)
                 return value;
 

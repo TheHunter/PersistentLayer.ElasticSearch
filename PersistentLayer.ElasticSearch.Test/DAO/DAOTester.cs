@@ -27,9 +27,12 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
         [InlineData("current")]
         public void ExistTest(string defaultIndex)
         {
+            var client = this.MakeElasticClient(defaultIndex);
+            client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
+
             using (var dao = this.MakePagedDao(defaultIndex))
             {
-                var instance = new Person(1) { Name = "Ton", Surname = "Jones" };
+                var instance = new Person { Name = "Ton", Surname = "Jones" };
                 dao.MakePersistent(instance);
 
                 var res = dao.FindBy<Person>(1);

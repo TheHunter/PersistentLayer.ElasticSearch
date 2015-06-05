@@ -7,7 +7,7 @@ namespace PersistentLayer.ElasticSearch.Test.Documents
 {
     public class Person
     {
-        protected Person()
+        public Person()
         {
         }
 
@@ -16,7 +16,7 @@ namespace PersistentLayer.ElasticSearch.Test.Documents
             this.Id = id;
         }
 
-        public int Id { get; private set; }
+        public int? Id { get; private set; }
         public string Name { get; set; }
         public string Surname { get; set; }
         public string Cf { get; set; }

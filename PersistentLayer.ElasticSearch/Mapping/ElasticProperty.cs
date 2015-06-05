@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 
 namespace PersistentLayer.ElasticSearch.Mapping
@@ -11,6 +12,8 @@ namespace PersistentLayer.ElasticSearch.Mapping
     /// </summary>
     public class ElasticProperty
     {
+        private readonly Func<object, object> valueFunc;
+
         public ElasticProperty(PropertyInfo property, string elasticName, Func<object, object> valueFunc)
         {
             if (property == null)
@@ -24,7 +27,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
             this.Property = property;
             this.ElasticName = elasticName;
-            this.ValueFunc = valueFunc;
+            this.valueFunc = valueFunc;
         }
 
         /// <summary>
@@ -44,11 +47,32 @@ namespace PersistentLayer.ElasticSearch.Mapping
         public string ElasticName { get; private set; }
 
         /// <summary>
-        /// Gets the value function.
+        /// Gets the value.
         /// </summary>
-        /// <value>
-        /// The value function.
-        /// </value>
-        public Func<object, object> ValueFunc { get; private set; }
+        /// <param name="instance">The instance.</param>
+        /// <returns></returns>
+        public object GetValue(object instance)
+        {
+            return this.valueFunc.Invoke(instance);
+        }
+
+        public TResult GetValue<TResult>(object instance)
+        {
+            var ret = this.valueFunc.Invoke(instance);
+            if (ret == null)
+                return default(TResult);
+
+            Type current = instance.GetType();
+            Type retType = typeof(TResult);
+
+            if (retType.IsAssignableFrom(current))
+                return ret as dynamic;
+
+            if (retType == typeof(string))
+                return ret.ToString() as dynamic;
+
+            throw new InvalidCastException(
+                string.Format("The property value cannot be converted into the given result type, TResult: {0}, TValue: {1}", retType.Name, current.Name));
+        }
     }
 }

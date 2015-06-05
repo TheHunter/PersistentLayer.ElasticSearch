@@ -15,7 +15,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
     public class MetadataWorker
         : MetadataInfo, IMetadataWorker
     {
-        //private Func<object, string> serializer;
         private object emptyReference;
         private MetadataEvaluator evaluator;
 

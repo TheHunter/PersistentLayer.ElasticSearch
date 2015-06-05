@@ -18,7 +18,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
     {
         private readonly List<Action<DocumentMapper>> actions;
         private readonly ElasticInferrer inferrer;
-        private readonly IdResolver idResolver = new IdResolver();
+        private readonly CustomIdResolver idResolver = new CustomIdResolver();
         private readonly Type docType;
 
         public MapperDescriptor(ElasticInferrer inferrer)
@@ -66,7 +66,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
         {
             var ret = new DocumentMapper(typeof(TDocument));
             this.actions.ForEach(action => action.Invoke(ret));
-            if (ret.Id != null)
+            if (ret.Id == null)
             {
                 var property = this.idResolver.GetPropertyInfo(typeof(TDocument));
                 if (property != null)

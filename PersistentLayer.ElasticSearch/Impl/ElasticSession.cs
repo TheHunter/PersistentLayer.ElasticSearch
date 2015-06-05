@@ -28,7 +28,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly KeyGeneratorResolver keyStrategyResolver;
         private readonly HashSet<ElasticKeyGenerator> keyGenerators;
         private readonly HashSet<IDocumentMapper> docMappers;
-        private readonly IdResolver idResolver;
+        private readonly CustomIdResolver idResolver;
 
         public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, IElasticClient client)
         {
@@ -38,7 +38,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.mapResolver = mapResolver;
             this.keyStrategyResolver = keyStrategyResolver;
             this.Client = client;
-            this.idResolver = new IdResolver();
+            this.idResolver = new CustomIdResolver();
 
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
             this.localCache = new MetadataCache(this.Index, client);
@@ -236,7 +236,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var docMapper = this.GetDocumentMapper<TEntity>(indexName);
 
-            var id = docMapper.Id != null ? docMapper.Id.ValueFunc.Invoke(entity).ToString() : null;
+            var id = docMapper.Id != null ? docMapper.Id.GetValue<string>(entity) : null;
             
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -258,20 +258,22 @@ namespace PersistentLayer.ElasticSearch.Impl
                         }
                         case KeyGenType.Identity:
                         {
-                            var keyGenerator = this.GetKeyGenerator(index, typeName, typeof(TEntity), docMapper);
+                            var keyGenerator = this.GetKeyGenerator(indexName, typeName, typeof(TEntity), docMapper);
                             var key = keyGenerator.Next();
-                            return this.Save(entity, key.ToString(), index);
+                            return this.Save(entity, key.ToString(), indexName);
                         }
                         case KeyGenType.Native:
                         {
-                            var response = this.Client.Index(entity, descriptor => descriptor
+                            object instance = this.AsDynamicDoc(entity);
+
+                            var response = this.Client.Index(instance, descriptor => descriptor
                                     .Type(typeName)
                                     .Index(indexName));
 
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                            this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, this.AsDynamicDoc(entity)));
+                            this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
                             
                             return entity;
                         }
@@ -371,7 +373,9 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (res0.Exists)
                     throw new DuplicatedInstanceException(string.Format("Impossible to save the given instance because is already present into storage, id: {0}, index: {1}", id, this.Index));
 
-                var response = this.Client.Index(entity, descriptor => descriptor
+                var dynInstance = this.AsDynamicDoc(entity);
+
+                var response = this.Client.Index(dynInstance, descriptor => descriptor
                     .Id(idStr)
                     .Type(typeName)
                     .Index(indexName));
@@ -379,7 +383,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, this.AsDynamicDoc(entity)));
+                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
             }
             
             return entity;

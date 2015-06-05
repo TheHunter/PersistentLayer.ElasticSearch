@@ -18,7 +18,9 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         public MapperDescriptorResolver Register(IDocumentMapBuilder mapConfiguration)
         {
-            this.mappers.Add(mapConfiguration);
+            if (this.mappers.All(builder => builder.DocumenType != mapConfiguration.DocumenType))
+                this.mappers.Add(mapConfiguration);
+            
             return this;
         }
 
