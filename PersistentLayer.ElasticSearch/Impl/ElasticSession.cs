@@ -4,6 +4,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using Elasticsearch.Net;
 using Nest;
 using Nest.Resolvers;
 using Newtonsoft.Json;
@@ -268,7 +269,9 @@ namespace PersistentLayer.ElasticSearch.Impl
 
                             var response = this.Client.Index(instance, descriptor => descriptor
                                     .Type(typeName)
-                                    .Index(indexName));
+                                    .Index(indexName)
+                                    );
+                            
 
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");

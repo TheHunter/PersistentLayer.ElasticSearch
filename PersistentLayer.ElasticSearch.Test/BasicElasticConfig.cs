@@ -14,7 +14,7 @@ namespace PersistentLayer.ElasticSearch.Test
 {
     public class BasicElasticConfig
     {
-        private IContainer container;
+        private readonly IContainer container;
 
         public BasicElasticConfig()
         {

@@ -78,11 +78,14 @@
     <Compile Include="BasicElasticConfig.cs" />
     <Compile Include="DAO\DAOTester.cs" />
     <Compile Include="DAO\TransactionTester.cs" />
+    <Compile Include="Documents\MySealedClass.cs" />
     <Compile Include="Documents\Person.cs" />
     <Compile Include="Documents\Student.cs" />
     <Compile Include="KeyGeneration\KeyGeneratorTest.cs" />
     <Compile Include="Metadata\MetadataTester.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy\DocumentAdapter.cs" />
+    <Compile Include="Proxy\ProxyGeneratorTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="PersistentLayer.license.txt" />

@@ -109,6 +109,7 @@
     <Compile Include="Metadata\PersistenceStatus.cs" />
     <Compile Include="PersistenceType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy\ProxyGenerator.cs" />
     <Compile Include="Resolvers\DynamicContractResolver.cs" />
     <Compile Include="Util.cs">
       <SubType>Code</SubType>

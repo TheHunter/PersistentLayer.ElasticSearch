@@ -330,15 +330,6 @@ namespace PersistentLayer.ElasticSearch.Cache
         /// <returns></returns>
         private IEnumerable<IMetadataWorker> GetCache(string indexName, Func<IMetadataWorker, bool> cond = null)
         {
-            //return cond == null
-            //    ? this.localCache.Where(info =>
-            //        (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
-            //        )
-            //    : this.localCache.Where(info =>
-            //        (indexName ?? this.Index).Equals(info.IndexName, StringComparison.InvariantCulture)
-            //        && cond.Invoke(info)
-            //        );
-
             return this.localCache.Where(worker =>
                 (indexName == null || worker.IndexName.Equals(indexName, StringComparison.InvariantCulture))
                 && (cond == null || cond.Invoke(worker))
