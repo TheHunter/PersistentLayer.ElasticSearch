@@ -4,9 +4,8 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using Elasticsearch.Net;
+using System.Reflection.Emit;
 using Nest;
-using Nest.Resolvers;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Exceptions;
@@ -14,6 +13,7 @@ using PersistentLayer.ElasticSearch.Extensions;
 using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.ElasticSearch.Metadata;
+using PersistentLayer.ElasticSearch.Proxy;
 using PersistentLayer.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.Impl
@@ -30,8 +30,9 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly HashSet<ElasticKeyGenerator> keyGenerators;
         private readonly HashSet<IDocumentMapper> docMappers;
         private readonly CustomIdResolver idResolver;
+        private readonly DocumentAdapterResolver adapterResolver;
 
-        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, IElasticClient client)
+        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
@@ -46,11 +47,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.evaluator = new MetadataEvaluator
             {
                 Serializer = serializer,
-                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest)
+                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings)
             };
 
             this.keyGenerators = new HashSet<ElasticKeyGenerator>();
             this.docMappers = new HashSet<IDocumentMapper>(new DocumentMapperComparer());
+            this.adapterResolver = adapterResolver;
         }
 
         public string Id { get; private set; }
@@ -265,7 +267,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                         }
                         case KeyGenType.Native:
                         {
-                            object instance = this.AsDynamicDoc(entity);
+                            object instance = this.AsDocumentSession(entity);
 
                             var response = this.Client.Index(instance, descriptor => descriptor
                                     .Type(typeName)
@@ -376,7 +378,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (res0.Exists)
                     throw new DuplicatedInstanceException(string.Format("Impossible to save the given instance because is already present into storage, id: {0}, index: {1}", id, this.Index));
 
-                var dynInstance = this.AsDynamicDoc(entity);
+                var dynInstance = this.AsDocumentSession(entity);
 
                 var response = this.Client.Index(dynInstance, descriptor => descriptor
                     .Id(idStr)
@@ -516,9 +518,21 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
-        private object AsDynamicDoc(object instance)
+        private object AsDocumentSession(object instance)
         {
-            return instance.AsDynamic(new KeyValuePair<string, object>(SessionFieldName, this.Id));
+            Type sourceType = instance.GetType();
+            var adapter = this.adapterResolver.Resolve(sourceType);
+
+            if (adapter == null)
+                throw new BusinessLayerException("The adapter used for document session cannot be null.", "AsDocumentSession");
+
+            var destination = adapter.MergeWith(instance);
+
+            adapter.AdapterType.GetProperty(SessionFieldName)
+                .SetValue(destination, this.Id, null);
+
+            //return instance.AsDynamic(new KeyValuePair<string, object>(SessionFieldName, this.Id));
+            return destination;
         }
 
         private IDocumentMapper GetDocumentMapper<TEntity>(string index)

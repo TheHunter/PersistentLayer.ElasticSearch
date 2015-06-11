@@ -4,10 +4,11 @@ using System.Data;
 using System.Linq;
 using Nest;
 using Newtonsoft.Json;
+using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
+using PersistentLayer.ElasticSearch.Proxy;
 using PersistentLayer.Exceptions;
 using PersistentLayer.Impl;
-using PersistentLayer.ElasticSearch.KeyGeneration;
 
 namespace PersistentLayer.ElasticSearch.Impl
 {
@@ -20,11 +21,11 @@ namespace PersistentLayer.ElasticSearch.Impl
         private const string DefaultNaming = "anonymous";
         private readonly Stack<ITransactionInfo> transactions;
 
-        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver)
+        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
         {
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
-            this.Session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, keyResolver, client);
+            this.Session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, keyResolver, adapterResolver, client);
         }
 
         public IElasticClient Client { get; private set; }

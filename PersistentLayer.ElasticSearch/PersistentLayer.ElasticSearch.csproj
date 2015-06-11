@@ -61,6 +61,7 @@
     <Compile Include="CustomNestSerializer.cs" />
     <Compile Include="Extensions\ElasticClientExtension.cs" />
     <Compile Include="Extensions\QueryDescriptorExtension.cs" />
+    <Compile Include="IComponentResolver.cs" />
     <Compile Include="IElasticRootPagedDAO.cs" />
     <Compile Include="IElasticTransactionProvider.cs" />
     <Compile Include="Impl\ElasticSession.cs">
@@ -109,6 +110,8 @@
     <Compile Include="Metadata\PersistenceStatus.cs" />
     <Compile Include="PersistenceType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy\DocumentAdapter.cs" />
+    <Compile Include="Proxy\DocumentAdapterResolver.cs" />
     <Compile Include="Proxy\ProxyGenerator.cs" />
     <Compile Include="Resolvers\DynamicContractResolver.cs" />
     <Compile Include="Util.cs">

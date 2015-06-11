@@ -84,7 +84,7 @@
     <Compile Include="KeyGeneration\KeyGeneratorTest.cs" />
     <Compile Include="Metadata\MetadataTester.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Proxy\DocumentAdapter.cs" />
+    <Compile Include="Proxy\DocumentAdapterTest.cs" />
     <Compile Include="Proxy\ProxyGeneratorTest.cs" />
   </ItemGroup>
   <ItemGroup>

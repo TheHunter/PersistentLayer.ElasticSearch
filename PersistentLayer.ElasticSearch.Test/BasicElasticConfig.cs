@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Impl;
 using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
+using PersistentLayer.ElasticSearch.Proxy;
 using PersistentLayer.ElasticSearch.Resolvers;
 using PersistentLayer.ElasticSearch.Test.Documents;
 
@@ -71,7 +72,9 @@ namespace PersistentLayer.ElasticSearch.Test
             return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex),
                 this.MakeJsonSettings(defaultIndex),
                 this.container.Resolve<KeyGeneratorResolver>(),
-                this.container.Resolve<MapperDescriptorResolver>());
+                this.container.Resolve<MapperDescriptorResolver>(),
+                this.container.Resolve<DocumentAdapterResolver>()
+                );
         }
 
         protected IElasticRootPagedDAO<object> MakePagedDao(string defaultIndex)
