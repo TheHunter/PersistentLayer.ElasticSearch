@@ -127,10 +127,10 @@ namespace PersistentLayer.ElasticSearch.Extensions
                 return null;
 
             var value = agg.Value.Value;
-            if (value.GetType() == property.Property.PropertyType)
+            if (value.GetType() == property.PropertyType)
                 return value;
 
-            return Convert.ChangeType(value, property.Property.PropertyType);
+            return Convert.ChangeType(value, property.PropertyType);
         }
     }
 }

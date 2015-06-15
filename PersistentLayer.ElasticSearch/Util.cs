@@ -10,10 +10,12 @@ namespace PersistentLayer.ElasticSearch
     public static class Util
     {
         private static readonly Type FunctionGetter;
+        private static readonly Type FunctionSetter;
 
         static Util()
         {
             FunctionGetter = typeof(Func<,>);
+            FunctionSetter = typeof(Action<,>);
         }
 
         public static PropertyInfo AsPropertyInfo<TInstance>(this Expression<Func<TInstance, object>> expression)
@@ -40,7 +42,18 @@ namespace PersistentLayer.ElasticSearch
             if (memberExpr == null)
                 return null;
 
-            return memberExpr.Member as PropertyInfo;
+            var property = memberExpr.Member as PropertyInfo;
+            var docType = typeof(TInstance);
+
+            if (property != null && property.DeclaringType != null && property.DeclaringType != docType)
+            {
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.CreateInstance
+                        | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty;
+
+                property = property.DeclaringType.GetProperty(property.Name, flags);
+            }
+
+            return property;
         }
 
         /// <summary>
@@ -54,6 +67,19 @@ namespace PersistentLayer.ElasticSearch
             MethodInfo getterMethod = property.GetGetMethod() ?? property.GetGetMethod(true);
             Delegate getter = Delegate.CreateDelegate(funcType, null, getterMethod);
             return getter;
+        }
+
+        /// <summary>
+        /// Makes the setter.
+        /// </summary>
+        /// <param name="property">The property.</param>
+        /// <returns></returns>
+        public static Delegate MakeSetter(this PropertyInfo property)
+        {
+            Type actType = FunctionSetter.MakeGenericType(property.DeclaringType, property.PropertyType);
+            MethodInfo setterMethod = property.GetSetMethod() ?? property.GetSetMethod(true);
+            Delegate setter = Delegate.CreateDelegate(actType, setterMethod);
+            return setter;
         }
 
         public static object GetDefaultValue(this Type type)

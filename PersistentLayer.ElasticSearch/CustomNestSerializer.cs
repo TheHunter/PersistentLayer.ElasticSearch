@@ -86,7 +86,16 @@ namespace PersistentLayer.ElasticSearch
         {
             var properties = token.Properties().Where(n => n.Value.Type == JTokenType.Object)
                 .Select(n => n.Value as JObject)
-                .ToArray();
+                .ToList();
+
+            var arrayProperties = token.Properties().Where(n => n.Value.Type == JTokenType.Array)
+                .Select(n => n.Value as JArray);
+
+            foreach (var arrayProperty in arrayProperties)
+            {
+                properties.AddRange(arrayProperty.Where(n => n.Type == JTokenType.Object).Select(n => n as JObject));
+            }
+
 
             bool ret = token.Remove("$type");
             return properties.Aggregate(ret, (current, property) => this.RemoveTypeProperty(property) || current);

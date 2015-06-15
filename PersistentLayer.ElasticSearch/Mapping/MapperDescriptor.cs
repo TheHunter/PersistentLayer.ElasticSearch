@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Nest;
-using Nest.Resolvers;
-using PersistentLayer.ElasticSearch.Extensions;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
@@ -71,8 +69,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
                 var property = this.idResolver.GetPropertyInfo(typeof(TDocument));
                 if (property != null)
                 {
-                    ret.Id = new ElasticProperty(property, this.inferrer.PropertyName(property),
-                        instance => property.MakeGetter().DynamicInvoke(instance));
+                    ret.Id = new ElasticProperty(property, this.inferrer.PropertyName(property));
                 }
             }
             ret.KeyGenType = keyGenType;
@@ -87,6 +84,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
         private ElasticProperty MakeProperty(Expression<Func<TDocument, object>> docExpression)
         {
             var property = docExpression.AsPropertyInfo();
+
             return new ElasticProperty(property,
                 this.inferrer.PropertyName(property),
                 instance => docExpression.Compile().Invoke(instance as dynamic));

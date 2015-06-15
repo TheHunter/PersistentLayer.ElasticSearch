@@ -17,7 +17,6 @@ C:\Users\Diego\Documents\Progetti\Net\HunterRepo\PersistentLayer.ElasticSearch\P
 C:\Users\Diego\Documents\Progetti\Net\HunterRepo\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\obj\Debug\PersistentLayer.ElasticSearch.Test.csprojResolveAssemblyReference.cache
 C:\Users\Diego\Documents\Progetti\Net\HunterRepo\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\obj\Debug\PersistentLayer.ElasticSearch.Test.dll
 C:\Users\Diego\Documents\Progetti\Net\HunterRepo\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\obj\Debug\PersistentLayer.ElasticSearch.Test.pdb
-D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\bin\Debug\xunit.execution.desktop.dll
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\bin\Debug\PersistentLayer.ElasticSearch.Test.dll
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\bin\Debug\PersistentLayer.ElasticSearch.Test.pdb
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\bin\Debug\Autofac.dll
@@ -47,3 +46,4 @@ D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearc
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\obj\Debug\PersistentLayer.ElasticSearch.Test.csprojResolveAssemblyReference.cache
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\obj\Debug\PersistentLayer.ElasticSearch.Test.dll
 D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\obj\Debug\PersistentLayer.ElasticSearch.Test.pdb
+D:\Projects\thehunter\PersistentLayer.ElasticSearch\PersistentLayer.ElasticSearch.Test\bin\Debug\xunit.execution.desktop.dll

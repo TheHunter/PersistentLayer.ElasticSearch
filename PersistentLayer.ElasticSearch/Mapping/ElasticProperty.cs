@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
+using DynamicMapResolver.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
@@ -13,6 +14,22 @@ namespace PersistentLayer.ElasticSearch.Mapping
     public class ElasticProperty
     {
         private readonly Func<object, object> valueFunc;
+        private readonly Action<object, object> valueAct;
+
+        public ElasticProperty(PropertyInfo property, string elasticName)
+        {
+            if (property == null)
+                throw new ArgumentNullException("property", "property used for ElasticProperty cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(elasticName))
+                throw new ArgumentException("The name related to the given property info cannot be null.", "elasticName");
+
+            this.Property = property;
+            this.ElasticName = elasticName;
+
+            this.valueFunc = instance => property.MakeGetter().DynamicInvoke(instance);
+            this.valueAct = (instance, value) => property.MakeSetter().DynamicInvoke(instance, value);
+        }
 
         public ElasticProperty(PropertyInfo property, string elasticName, Func<object, object> valueFunc)
         {
@@ -36,7 +53,18 @@ namespace PersistentLayer.ElasticSearch.Mapping
         /// <value>
         /// The property.
         /// </value>
-        public PropertyInfo Property { get; private set; }
+        protected PropertyInfo Property { get; private set; }
+
+        /// <summary>
+        /// Gets the type of the property.
+        /// </summary>
+        /// <value>
+        /// The type of the property.
+        /// </value>
+        public Type PropertyType
+        {
+            get { return this.Property.PropertyType; }
+        }
 
         /// <summary>
         /// Gets the elasticName of the elastic.
@@ -73,6 +101,19 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
             throw new InvalidCastException(
                 string.Format("The property value cannot be converted into the given result type, TResult: {0}, TValue: {1}", retType.Name, current.Name));
+        }
+
+        public void SetValue(object instance, object value)
+        {
+            try
+            {
+                this.valueAct.Invoke(instance, value);
+            }
+            catch (Exception ex)
+            {
+                throw new FailedSetPropertyException("Impossible to assing the given value because It's not compatible.", ex);
+            }
+
         }
     }
 }

@@ -263,6 +263,13 @@ namespace PersistentLayer.ElasticSearch.Impl
                         {
                             var keyGenerator = this.GetKeyGenerator(indexName, typeName, typeof(TEntity), docMapper);
                             var key = keyGenerator.Next();
+
+                            ////if (docMapper.Id != null)
+                            ////    docMapper.Id.Property.SetValue(entity, key, null);
+                            
+                            if (docMapper.Id != null)
+                                docMapper.Id.SetValue(entity, key);
+
                             return this.Save(entity, key.ToString(), indexName);
                         }
                         case KeyGenType.Native:
@@ -273,7 +280,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                                     .Type(typeName)
                                     .Index(indexName)
                                     );
-                            
 
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
@@ -552,8 +558,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 current = new DocumentMapper(docType)
                 {
                     DocumenType = docType,
-                    Id = property == null ? null
-                                    : new ElasticProperty(property, this.Client.Infer.PropertyName(property), instance => property.MakeGetter().DynamicInvoke(instance)),
+                    Id = property == null ? null : new ElasticProperty(property, this.Client.Infer.PropertyName(property)),
                     KeyGenType = KeyGenType.Identity
                 };
             }
@@ -579,7 +584,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             if (current == null && docMapper.Id != null)
             {
-                var keyGenStrategy = this.keyStrategyResolver.Resolve(docMapper.Id.Property.PropertyType);
+                var keyGenStrategy = this.keyStrategyResolver.Resolve(docMapper.Id.PropertyType);
 
                 if (keyGenStrategy == null)
                     throw new BusinessPersistentException(string.Format("No key generation strategy was founded, KeyType: {0}", type.Name), "GetKeyGenerator");

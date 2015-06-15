@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using Autofac;
 using Autofac.Core;
 using Nest;
@@ -7,6 +9,7 @@ using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Impl;
 using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
+using PersistentLayer.ElasticSearch.Metadata;
 using PersistentLayer.ElasticSearch.Proxy;
 using PersistentLayer.ElasticSearch.Resolvers;
 using PersistentLayer.ElasticSearch.Test.Documents;
@@ -58,9 +61,44 @@ namespace PersistentLayer.ElasticSearch.Test
                         );
                 });
 
+            builder.Register(context =>
+                {
+                    var jsonSettings = this.MakeJsonSettings(this.MakeSettings("current"));
+                    jsonSettings.NullValueHandling = NullValueHandling.Include;
+
+                    Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
+                    return new MetadataEvaluator
+                    {
+                        Serializer = serializer,
+                        Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings)
+                    };
+                })
+            .AsSelf();
+
+            builder.Register(context => MakeModelBuilder())
+                .AsSelf()
+                .SingleInstance();
+
+            builder.Register(context => new DocumentAdapterResolver(context.Resolve<ModuleBuilder>(), context.Resolve<MetadataEvaluator>().Merge, typeBuilder => typeBuilder.AddProperty<string>("$idsession")))
+                .AsSelf()
+                .SingleInstance();
+
             this.container = builder.Build();
         }
-        
+
+        private static ModuleBuilder MakeModelBuilder()
+        {
+            var appDomain = AppDomain.CurrentDomain;
+            var myAsmName = new AssemblyName { Name = "MyDynamicAssembly" };
+
+            AssemblyBuilder assemblyBuilder = appDomain.DefineDynamicAssembly(myAsmName,
+                AssemblyBuilderAccess.RunAndCollect);
+
+            return assemblyBuilder.DefineDynamicModule(myAsmName.Name, myAsmName.Name + ".dll");
+        }
+
+
+
         protected ConnectionSettings MakeSettings(string defaultIndex)
         {
             return this.container.Resolve<Func<string, ConnectionSettings>>()
@@ -86,7 +124,7 @@ namespace PersistentLayer.ElasticSearch.Test
         {
             var list = new List<Type>
             {
-                typeof(QueryPathDescriptorBase<,,>)
+                typeof(QueryPathDescriptorBase<,,>), typeof(MissingFilterDescriptor)
             };
 
             var settings = this.container.Resolve<Func<string, ConnectionSettings>>()
