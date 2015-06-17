@@ -393,6 +393,8 @@ namespace PersistentLayer.ElasticSearch.Cache
                 if (metadata == null)
                     continue;
 
+                metadata.BecomePersistent(item.Version);
+
                 #region
                 
                 if (metadata.Origin == OriginContext.Newone)
@@ -421,8 +423,6 @@ namespace PersistentLayer.ElasticSearch.Cache
                 }
                 
                 #endregion
-
-                metadata.BecomePersistent(item.Version);
             }
         }
 

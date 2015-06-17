@@ -1,4 +1,5 @@
-﻿using PersistentLayer.ElasticSearch.Test.Documents;
+﻿using System;
+using PersistentLayer.ElasticSearch.Test.Documents;
 using Xunit;
 
 namespace PersistentLayer.ElasticSearch.Test.DAO
@@ -61,7 +62,16 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
 
                 var tranProvider = dao.GetTransactionProvider();
                 tranProvider.BeginTransaction("first");
+
+                Assert.Throws<InvalidOperationException>(() => dao.MakePersistent(instance));
+                instance.Cf = "kjdnfknskfn";
                 dao.MakePersistent(instance);
+
+                tranProvider.CommitTransaction();
+                
+                tranProvider.BeginTransaction();
+                instance.Cf = "CFHGVHGSVDHJAVSHJVHGKV";
+                // 
                 tranProvider.CommitTransaction();
 
                 var res0 = dao.FindBy<Person>(1);

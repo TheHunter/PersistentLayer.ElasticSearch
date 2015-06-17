@@ -31,13 +31,12 @@ namespace PersistentLayer.ElasticSearch.Mapping
             return this.SurrogateKey.All(property => property.GetValue(instance) != null);
         }
 
-
         public IEnumerable<ConstraintValue> GetConstraintValues(object instance)
         {
             if (!this.DocumentType.IsInstanceOfType(instance))
                 throw new InvalidOperationException("The given instance is not compatible with this document mapper");
 
-            if (this.SurrogateKey == null || this.SurrogateKey.Any())
+            if (this.SurrogateKey == null || !this.SurrogateKey.Any())
                 return Enumerable.Empty<ConstraintValue>();
 
             return
@@ -65,7 +64,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             if (string.IsNullOrWhiteSpace(elasticProperty))
                 throw new ArgumentException("The elastic property cannot be empty or null.", "elasticProperty");
 
-            if (string.IsNullOrWhiteSpace(elasticProperty))
+            if (string.IsNullOrWhiteSpace(propertyValue))
                 throw new ArgumentException("The property value cannot be empty or null.", "propertyValue");
 
             this.ElasticProperty = elasticProperty;

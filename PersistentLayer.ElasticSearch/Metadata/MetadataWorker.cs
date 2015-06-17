@@ -114,9 +114,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
         public void Update(IMetadataWorker metadata)
         {
             this.Id = metadata.Id;
-            
-            //this.evaluator.Merge(this.emptyReference, this.Instance);
-            //this.evaluator.Merge(metadata.Instance, this.Instance);
             this.UpdateInstance(metadata.Instance);
 
             this.Version = metadata.Version;
@@ -131,10 +128,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
         {
             var prev = this.PreviousStatus;
             this.PreviousStatus = null;
-
-            // making a reset on the origin reference (all properties can be set to default values.)
-            //this.evaluator.Merge(this.emptyReference, this.Instance);
-            //this.evaluator.Merge(prev.Instance, this.Instance);
             this.UpdateInstance(prev.Instance);
 
             if (version != null)
