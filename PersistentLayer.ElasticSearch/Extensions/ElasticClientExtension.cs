@@ -14,31 +14,21 @@ namespace PersistentLayer.ElasticSearch.Extensions
     {
         
         public static bool DocumentExists(this IElasticClient client,
-            string index, string type, object instance, params ElasticProperty[] properties)
+            string index, string type, object instance, params ConstraintValue[] properties)
         {
             if (properties == null || !properties.Any())
                 return false;
-
-            var list = new List<KeyValuePair<string, string>>();
-            foreach (var elasticProperty in properties)
-            {
-                ElasticProperty property = elasticProperty;
-                var propertyValue = property.GetValue<string>(instance);
-                if (propertyValue == null)
-                    return false;
-                list.Add(new KeyValuePair<string, string>(property.ElasticName, propertyValue));
-            }
-
+            
             var result = client.Search(delegate(SearchDescriptor<object> descriptor)
             {
                 descriptor.Index(index);
                 descriptor.Type(type);
                 descriptor.Take(1);
 
-                foreach (var current in list)
+                foreach (var current in properties)
                 {
-                    descriptor.Query(qd => qd.Match(qdd => qdd.Query(current.Value)
-                        .OnField(current.Key)
+                    descriptor.Query(qd => qd.Match(qdd => qdd.Query(current.PropertyValue)
+                        .OnField(current.ElasticProperty)
                         ));
                 }
                 return descriptor;

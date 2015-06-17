@@ -97,8 +97,6 @@ namespace PersistentLayer.ElasticSearch.Test
             return assemblyBuilder.DefineDynamicModule(myAsmName.Name, myAsmName.Name + ".dll");
         }
 
-
-
         protected ConnectionSettings MakeSettings(string defaultIndex)
         {
             return this.container.Resolve<Func<string, ConnectionSettings>>()

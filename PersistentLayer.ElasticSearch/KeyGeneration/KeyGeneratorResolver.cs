@@ -6,7 +6,7 @@ using PersistentLayer.Exceptions;
 namespace PersistentLayer.ElasticSearch.KeyGeneration
 {
     /// <summary>
-    /// Rappresents a key generator container used for resolving identifiers.
+    /// Rappresents a key generator container used for resolving identifier generators.
     /// </summary>
     public class KeyGeneratorResolver
     {

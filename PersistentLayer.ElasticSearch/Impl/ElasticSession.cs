@@ -243,36 +243,30 @@ namespace PersistentLayer.ElasticSearch.Impl
             
             if (string.IsNullOrWhiteSpace(id))
             {
-                if (docMapper.SurrogateKey != null)
-                {
-                    var surrogateKey = docMapper.SurrogateKey.ToArray();
-                    var exists = this.Client.DocumentExists(indexName, typeName, entity, surrogateKey);
-                    if (exists)
-                        throw new DuplicatedInstanceException(
-                            string.Format(
-                                "Impossible to save the given instance because there's an instance with the given constraint, document type: {0}",
-                                typeName));
+                var exists = this.Client.DocumentExists(indexName, typeName, entity, docMapper.GetConstraintValues(entity).ToArray());
+                if (exists)
+                    throw new DuplicatedInstanceException(
+                        string.Format(
+                            "Impossible to save the given instance because there's an instance with the given constraint, document type: {0}",
+                            typeName));
 
-                    switch (docMapper.KeyGenType)
-                    {
-                        case KeyGenType.Assigned:
+                switch (docMapper.KeyGenType)
+                {
+                    case KeyGenType.Assigned:
                         {
-                            throw new MissingPrimaryKeyException("The given document doesn't have any identifier set.");
+                            throw new InvalidOperationException("The given document doesn't have any identifier set.");
                         }
-                        case KeyGenType.Identity:
+                    case KeyGenType.Identity:
                         {
                             var keyGenerator = this.GetKeyGenerator(indexName, typeName, typeof(TEntity), docMapper);
                             var key = keyGenerator.Next();
 
-                            ////if (docMapper.Id != null)
-                            ////    docMapper.Id.Property.SetValue(entity, key, null);
-                            
                             if (docMapper.Id != null)
                                 docMapper.Id.SetValue(entity, key);
 
                             return this.Save(entity, key.ToString(), indexName);
                         }
-                        case KeyGenType.Native:
+                    case KeyGenType.Native:
                         {
                             object instance = this.AsDocumentSession(entity);
 
@@ -285,12 +279,11 @@ namespace PersistentLayer.ElasticSearch.Impl
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
                             this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
-                            
+
                             return entity;
                         }
-                    }
-                    return this.Save(entity, id, indexName);
                 }
+                return this.Save(entity, id, indexName);
             }
 
             this.UpdateInstance(entity, id, typeName);
@@ -522,7 +515,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         public ISession ChildSession()
         {
             throw new NotImplementedException();
-        }
+        }        
 
         private object AsDocumentSession(object instance)
         {
@@ -537,7 +530,6 @@ namespace PersistentLayer.ElasticSearch.Impl
             adapter.AdapterType.GetProperty(SessionFieldName)
                 .SetValue(destination, this.Id, null);
 
-            //return instance.AsDynamic(new KeyValuePair<string, object>(SessionFieldName, this.Id));
             return destination;
         }
 
@@ -545,7 +537,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             where TEntity : class
         {
             Type docType = typeof(TEntity);
-            IDocumentMapper current = this.docMappers.FirstOrDefault(mapper => mapper.DocumenType == docType);
+            IDocumentMapper current = this.docMappers.FirstOrDefault(mapper => mapper.DocumentType == docType);
 
             if (current != null)
                 return current;
@@ -557,7 +549,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 
                 current = new DocumentMapper(docType)
                 {
-                    DocumenType = docType,
+                    DocumentType = docType,
                     Id = property == null ? null : new ElasticProperty(property, this.Client.Infer.PropertyName(property)),
                     KeyGenType = KeyGenType.Identity
                 };

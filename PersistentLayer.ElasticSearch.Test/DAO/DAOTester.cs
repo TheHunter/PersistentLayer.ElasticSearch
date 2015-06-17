@@ -25,7 +25,7 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
 
         [Theory]
         [InlineData("current")]
-        public void ExistTest(string defaultIndex)
+        public void MakePersistentTest(string defaultIndex)
         {
             var client = this.MakeElasticClient(defaultIndex);
             client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
@@ -37,6 +37,27 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
 
                 var res = dao.FindBy<Person>(1);
                 Assert.Null(res);
+
+                var tranProvider = dao.GetTransactionProvider();
+                tranProvider.BeginTransaction("first");
+                dao.MakePersistent(instance);
+                tranProvider.CommitTransaction();
+
+                var res0 = dao.FindBy<Person>(1);
+                Assert.NotNull(res0);
+            }
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void MakePersistentTest2(string defaultIndex)
+        {
+            var client = this.MakeElasticClient(defaultIndex);
+            client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var instance = new Person { Name = "Ton", Surname = "Jones" };
 
                 var tranProvider = dao.GetTransactionProvider();
                 tranProvider.BeginTransaction("first");

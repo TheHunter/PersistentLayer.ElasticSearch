@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
-using DynamicMapResolver.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
@@ -111,7 +110,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             }
             catch (Exception ex)
             {
-                throw new FailedSetPropertyException("Impossible to assing the given value because It's not compatible.", ex);
+                throw new InvalidOperationException("Impossible to assing the given value because It's not compatible.", ex);
             }
 
         }

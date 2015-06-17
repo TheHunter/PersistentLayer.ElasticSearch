@@ -19,10 +19,10 @@ namespace PersistentLayer.ElasticSearch.Mapping
             if (obj == null)
                 throw new ArgumentNullException("obj");
 
-            if (obj.DocumenType == null)
+            if (obj.DocumentType == null)
                 throw new ArgumentException("Document type cannot be null", "obj");
 
-            return obj.DocumenType.GetHashCode();
+            return obj.DocumentType.GetHashCode();
         }
     }
 }
