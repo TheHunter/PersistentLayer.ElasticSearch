@@ -48,7 +48,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         private PropertyInfo GetPropertyCaseInsensitive(Type type, string propertyName)
         {
-            return type.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
+            return type.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         }
     }
 }

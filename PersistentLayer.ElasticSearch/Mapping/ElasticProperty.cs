@@ -44,6 +44,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             this.Property = property;
             this.ElasticName = elasticName;
             this.valueFunc = valueFunc;
+            this.valueAct = (instance, value) => property.MakeSetter().DynamicInvoke(instance, value);
         }
 
         /// <summary>

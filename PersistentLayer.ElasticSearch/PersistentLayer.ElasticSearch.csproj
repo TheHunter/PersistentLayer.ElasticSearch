@@ -96,7 +96,6 @@
     <Compile Include="IElasticSession.cs" />
     <Compile Include="Impl\ElasticTransactionProvider.cs" />
     <Compile Include="Impl\ElasticRootPagedDAO.cs" />
-    <Compile Include="IPersistenceResult.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="Metadata\DocOperationResponse.cs" />
     <Compile Include="Metadata\IMetadataWorker.cs" />
@@ -104,7 +103,6 @@
     <Compile Include="Metadata\MetadataWorker.cs" />
     <Compile Include="Metadata\OriginContext.cs" />
     <Compile Include="Metadata\PersistenceStatus.cs" />
-    <Compile Include="PersistenceType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy\DocumentAdapter.cs" />
     <Compile Include="Proxy\DocumentAdapterResolver.cs" />

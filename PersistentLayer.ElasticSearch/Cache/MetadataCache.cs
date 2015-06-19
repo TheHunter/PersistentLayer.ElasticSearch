@@ -13,7 +13,6 @@ namespace PersistentLayer.ElasticSearch.Cache
         : IMetadataCache, IDisposable
     {
         private const string SessionFieldName = "$idsession";
-        // private readonly IdResolver idResolver = new IdResolver();
         private readonly HashSet<IMetadataWorker> localCache;
         private readonly IElasticClient client;
         private readonly IEqualityComparer<IMetadataInfo> comparer;

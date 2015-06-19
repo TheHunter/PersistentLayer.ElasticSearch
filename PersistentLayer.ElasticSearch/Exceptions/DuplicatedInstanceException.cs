@@ -6,7 +6,7 @@ using System.Text;
 namespace PersistentLayer.ElasticSearch.Exceptions
 {
     /// <summary>
-    /// Rappresents an instance reference already present into Session cache.
+    /// Rappresents an instance reference is already present into Session cache.
     /// </summary>
     public class DuplicatedInstanceException
         : Exception

@@ -9,6 +9,9 @@ namespace PersistentLayer.ElasticSearch.Mapping
     {
         public DocumentMapper(Type docType)
         {
+            if (docType == null)
+                throw new ArgumentNullException("docType", "The document type for this mapper cannot be null.");
+
             this.DocumentType = docType;
         }
 
@@ -81,16 +84,50 @@ namespace PersistentLayer.ElasticSearch.Mapping
     /// </summary>
     public interface IDocumentMapper
     {
+        /// <summary>
+        /// Gets the type of the document.
+        /// </summary>
+        /// <value>
+        /// The type of the document.
+        /// </value>
         Type DocumentType { get; }
 
+        /// <summary>
+        /// Gets the identifier property.
+        /// </summary>
+        /// <value>
+        /// The identifier.
+        /// </value>
         ElasticProperty Id { get; }
 
+        /// <summary>
+        /// Gets the collection which rappresents the surrogate key for documents.
+        /// </summary>
+        /// <value>
+        /// The surrogate key.
+        /// </value>
         IEnumerable<ElasticProperty> SurrogateKey { get; }
 
+        /// <summary>
+        /// Gets or sets the type of the key gen.
+        /// </summary>
+        /// <value>
+        /// The type of the key gen.
+        /// </value>
         KeyGenType KeyGenType { get; set; }
 
+        /// <summary>
+        /// Valids the given instance verifying eventually not nullable properties mapped as surrogate key.
+        /// </summary>
+        /// <param name="instance">The instance to evaluate.</param>
+        /// <returns></returns>
         bool ValidConstraints(object instance);
 
+        /// <summary>
+        /// Gets the constraint values from the given instance.
+        /// </summary>
+        /// <param name="instance">The instance.</param>
+        /// <returns></returns>
         IEnumerable<ConstraintValue> GetConstraintValues(object instance);
     }
 }
