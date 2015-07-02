@@ -1,4 +1,343 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="Caching">
+    <Position X="2.052" Y="0.5" Height="0.385" Width="1.533" />
+  </Comment>
+  <Class Name="PersistentLayer.ElasticSearch.Cache.MetadataCache">
+    <Position X="2" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAgACAAgAIAAAACBAAAAKAgAAAAAAUBBABMCAA=</HashCode>
+      <FileName>Cache\MetadataCache.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Exceptions.BulkOperationException" Collapsed="true">
+    <Position X="12.75" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Exceptions\BulkOperationException.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Exceptions.DuplicatedInstanceException" Collapsed="true">
+    <Position X="15" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Exceptions\DuplicatedInstanceException.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.ElasticClientExtension" Collapsed="true">
+    <Position X="12.75" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAgAgAAAACAAAAAEAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Extensions\ElasticClientExtension.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.MetadataExtension" Collapsed="true">
+    <Position X="15" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ICAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
+      <FileName>Extensions\MetadataExtension.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.QueryDescriptorExtension" Collapsed="true">
+    <Position X="12.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAEAAAAAAAAAA=</HashCode>
+      <FileName>Extensions\QueryDescriptorExtension.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.ReflectionExtension" Collapsed="true">
+    <Position X="15" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAAAAAAABAAAAABAgAAAAAAAAAAAAIAAAAAAQAAAA=</HashCode>
+      <FileName>Extensions\ReflectionExtension.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticRootPagedDAO&lt;TRootEntity&gt;" BaseTypeListCollapsed="true">
+    <Position X="30" Y="28.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAACAgAQgCAAAQAAAQAAAAIAAAAAEAAAEBAAA=</HashCode>
+      <FileName>Impl\ElasticRootPagedDAO.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticRootPagedDAO&lt;TRootEntity, TEntity&gt;" BaseTypeListCollapsed="true">
+    <Position X="34.75" Y="28.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAACAgAQgCAAAQAAAQAAAAIAAAAAEAAAEBAAA=</HashCode>
+      <FileName>Impl\ElasticRootPagedDAO.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticSession" BaseTypeListCollapsed="true">
+    <Position X="7.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQDAIAgAgAwAApWGAAwAEAQYAAgGAAQIAEAAEkJAAQ=</HashCode>
+      <FileName>Impl\ElasticSession.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticTransactionProvider" BaseTypeListCollapsed="true">
+    <Position X="41.25" Y="28.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABIAAAAQAAAAEAAAAAAAAAAAAAAAAAABEAoAQ=</HashCode>
+      <FileName>Impl\ElasticTransactionProvider.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.KeyGeneration.ElasticKeyGenerator" Collapsed="true">
+    <Position X="7.75" Y="15" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgQAAAAAAAAAMAAEgAAAAAAAAAAQAJAAAAEAAAQAAAA=</HashCode>
+      <FileName>KeyGeneration\ElasticKeyGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.KeyGeneration.KeyGeneratorResolver" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="13.5" Y="15.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAAAAACAAAAAAAAAABAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>KeyGeneration\KeyGeneratorResolver.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.KeyGeneration.KeyGenStrategy" Collapsed="true">
+    <Position X="7.75" Y="16" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABAAIAAAAAAAAAAAAAAAAAAAAAQAABAAAAAAAAAAAA=</HashCode>
+      <FileName>KeyGeneration\KeyGenStrategy.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.CustomIdResolver">
+    <Position X="19.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAgAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Mapping\CustomIdResolver.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.DocumentMapper" BaseTypeListCollapsed="true">
+    <Position X="23.25" Y="22.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAABAAAAAAAAAgAAAAAAAAAABAQACAAAAAAAAA=</HashCode>
+      <FileName>Mapping\DocumentMapper.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.ConstraintValue">
+    <Position X="30.75" Y="22.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Mapping\DocumentMapper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.DocumentMapperComparer" BaseTypeListCollapsed="true">
+    <Position X="25.75" Y="22.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAgAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>Mapping\DocumentMapperComparer.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.ElasticProperty">
+    <Position X="28.75" Y="22.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIAAAAgAAAAAAAAAAAAAAAAQAAAgCAQAAAEA=</HashCode>
+      <FileName>Mapping\ElasticProperty.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.MapperDescriptor&lt;TDocument&gt;" BaseTypeListCollapsed="true">
+    <Position X="23.25" Y="18.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAABACAAAAACAAgAIAEAABAAAAAAAACAAAA=</HashCode>
+      <FileName>Mapping\MapperDescriptor.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Mapping.MapperDescriptorResolver" BaseTypeListCollapsed="true">
+    <Position X="20.75" Y="15.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQCAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Mapping\MapperDescriptorResolver.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Metadata.DocOperationResponse" Collapsed="true">
+    <Position X="4" Y="18.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAACAAAEAAAAAQAAAAAAAAAAAAAAAAAAAQEAAAAAAAA=</HashCode>
+      <FileName>Metadata\DocOperationResponse.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Metadata.IndexMetadataComparer" Collapsed="true">
+    <Position X="1" Y="23.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>Metadata\IndexMetadataComparer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataComparer" Collapsed="true">
+    <Position X="1" Y="22.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAgAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>Metadata\MetadataComparer.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataEvaluator" Collapsed="true">
+    <Position X="7" Y="18.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAACAAAAAAAAAAAAAAAQAAAAAAAAAAAAA=</HashCode>
+      <FileName>Metadata\MetadataEvaluator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataInfo" Collapsed="true">
+    <Position X="1" Y="18.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>KAACAAQAAAAAAAAEAAAAAAAAAAAAABQAQAAAAAAAAAA=</HashCode>
+      <FileName>Metadata\MetadataInfo.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataWorker" Collapsed="true">
+    <Position X="1" Y="19.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEQAAAAAAAAAAAgEIAACAAAAAIAAAAQAIAAAAAgAAAA=</HashCode>
+      <FileName>Metadata\MetadataWorker.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Proxy.DocumentAdapter" Collapsed="true">
+    <Position X="10.5" Y="15.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAAAAAAAAAAEgAAAAAAAAAAgAIAAAAQACAAAAAA=</HashCode>
+      <FileName>Proxy\DocumentAdapter.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Proxy.DocumentAdapterResolver" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="16.75" Y="15.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAAAAACAAAAAEAAAAAAAAAAAEAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Proxy\DocumentAdapterResolver.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Proxy.ProxyGenerator" Collapsed="true">
+    <Position X="13.5" Y="16.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAIAAIEAAAAAAIAgAgAAAAAAA=</HashCode>
+      <FileName>Proxy\ProxyGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.Resolvers.DynamicContractResolver">
+    <Position X="22" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAABAAAAAAAAIAAAAAgQAAAAAAQAAAAIAAAAAAA=</HashCode>
+      <FileName>Resolvers\DynamicContractResolver.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PersistentLayer.ElasticSearch.CustomNestSerializer">
+    <Position X="24.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAJAAgAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomNestSerializer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="PersistentLayer.ElasticSearch.Cache.IMetadataCache">
+    <Position X="2" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgAAAAAAIAAAAABAAAAIAAAAAAAAUAAABECAA=</HashCode>
+      <FileName>Cache\IMetadataCache.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.Mapping.IDocumentMapper">
+    <Position X="20.75" Y="22.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAABAAAAAAAAAgAAAAAAAAAABAQACAAAAAAAAA=</HashCode>
+      <FileName>Mapping\DocumentMapper.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.Mapping.IDocumentMapBuilder">
+    <Position X="20.75" Y="18.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAAAAAAAAgAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Mapping\IDocumentMapBuilder.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.Metadata.IMetadataInfo" Collapsed="true">
+    <Position X="4" Y="22.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>KAACAAQAAAAAAAAAAAAAAAAAAAAAABAAQAAAAAAAAAA=</HashCode>
+      <FileName>Metadata\IMetadataInfo.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.Metadata.IMetadataWorker" Collapsed="true">
+    <Position X="4" Y="23.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEQAAAAAAAAAAAAAIAACAAAAAIAAAAAAAAAAAAgAAAA=</HashCode>
+      <FileName>Metadata\IMetadataWorker.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IComponentResolver&lt;TComponent&gt;" Collapsed="true">
+    <Position X="16.75" Y="13.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IComponentResolver.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticRootPagedDAO&lt;TRootEntity, TEntity&gt;">
+    <Position X="28" Y="28.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IElasticRootPagedDAO.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticRootPagedDAO&lt;TRootEntity&gt;">
+    <Position X="33" Y="28.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IElasticRootPagedDAO.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticSession">
+    <Position X="7.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAQ=</HashCode>
+      <FileName>IElasticSession.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticTransactionProvider">
+    <Position X="39" Y="28.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=</HashCode>
+      <FileName>IElasticTransactionProvider.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.ISession">
+    <Position X="5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAIAgAgAgAAhCAAAQAEAQQAAAAAAAAAEAAEEJAAA=</HashCode>
+      <FileName>ISession.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="PersistentLayer.ElasticSearch.Mapping.KeyGenType">
+    <Position X="18.5" Y="22.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAgA=</HashCode>
+      <FileName>Mapping\KeyGenType.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PersistentLayer.ElasticSearch.Metadata.OriginContext" Collapsed="true">
+    <Position X="4" Y="19.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgA=</HashCode>
+      <FileName>Metadata\OriginContext.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PersistentLayer.ElasticSearch.Metadata.PersistenceStatus" Collapsed="true">
+    <Position X="7" Y="19.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEAAAAAAAAAAAAAAAAAAAAQBAAAAAAAAAAAA=</HashCode>
+      <FileName>Metadata\PersistenceStatus.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>

@@ -1,14 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace PersistentLayer.ElasticSearch
 {
+    /// <summary>
+    /// Rappresents a particolar resolver for retreiving instances.
+    /// </summary>
+    /// <typeparam name="TComponent">The type of the component.</typeparam>
     public interface IComponentResolver<out TComponent>
     {
-        TComponent Resolve<TFinder>();
+        /// <summary>
+        /// Resolves a component associated with the given type.
+        /// </summary>
+        /// <typeparam name="TKeyType">The type of instance to retreive.</typeparam>
+        /// <returns></returns>
+        TComponent Resolve<TKeyType>();
 
-        TComponent Resolve(Type typeFinder);
+        /// <summary>
+        /// Resolves a component associated with the given type.
+        /// </summary>
+        /// <param name="keyType">The type of instance to retreive.</param>
+        /// <returns></returns>
+        TComponent Resolve(Type keyType);
     }
 }

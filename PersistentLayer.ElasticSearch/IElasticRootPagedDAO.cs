@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace PersistentLayer.ElasticSearch
 {
+    /// <summary>
+    /// Rappresents a contract for accessing data from ElasticSearch engine.
+    /// </summary>
+    /// <typeparam name="TRootEntity">The type of the root entity.</typeparam>
+    /// <typeparam name="TEntity">The type of the entity.</typeparam>
     public interface IElasticRootPagedDAO<in TRootEntity, TEntity>
         : IRootPagedDAO<TRootEntity, TEntity>, IDisposable
         where TRootEntity : class
@@ -12,7 +14,10 @@ namespace PersistentLayer.ElasticSearch
     {
     }
 
-
+    /// <summary>
+    /// Rappresents a contract for accessing data ElasticSearch engine.
+    /// </summary>
+    /// <typeparam name="TRootEntity">The type of the root entity.</typeparam>
     public interface IElasticRootPagedDAO<in TRootEntity>
         : IRootPagedDAO<TRootEntity>, IDisposable
         where TRootEntity : class

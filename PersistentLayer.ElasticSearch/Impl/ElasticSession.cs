@@ -510,11 +510,6 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return;
             this.localCache.Flush();
-        }
-        
-        public ISession ChildSession()
-        {
-            throw new NotImplementedException();
         }        
 
         private object AsDocumentSession(object instance)
@@ -589,5 +584,6 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             return current;
         }
+
     }
 }

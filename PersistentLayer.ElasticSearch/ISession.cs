@@ -81,7 +81,5 @@ namespace PersistentLayer.ElasticSearch
         void Evict();
 
         void Flush();
-
-        ISession ChildSession();
     }
 }

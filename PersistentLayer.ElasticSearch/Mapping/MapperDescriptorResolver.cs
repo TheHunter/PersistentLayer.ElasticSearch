@@ -8,6 +8,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
     /// Rappresents a document mapper container used for retreiving info about how come documents should be saved.
     /// </summary>
     public class MapperDescriptorResolver
+        : IComponentResolver<IDocumentMapBuilder>
     {
         private readonly HashSet<IDocumentMapBuilder> mappers;
 
@@ -24,15 +25,14 @@ namespace PersistentLayer.ElasticSearch.Mapping
             return this;
         }
 
-        public IDocumentMapBuilder Resolve<TDocument>()
-            where TDocument : class
+        public IDocumentMapBuilder Resolve<TKeyType>()
         {
-            return this.Resolve(typeof(TDocument));
+            return this.Resolve(typeof(TKeyType));
         }
 
-        public IDocumentMapBuilder Resolve(Type documenType)
+        public IDocumentMapBuilder Resolve(Type keyType)
         {
-            return this.mappers.FirstOrDefault(mapper => mapper.DocumenType == documenType);
+            return this.mappers.FirstOrDefault(mapper => mapper.DocumenType == keyType);
         }
     }
 }

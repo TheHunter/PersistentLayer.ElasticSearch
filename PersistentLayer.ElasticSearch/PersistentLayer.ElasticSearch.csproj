@@ -57,8 +57,11 @@
     <Compile Include="CustomNestSerializer.cs" />
     <Compile Include="Extensions\ElasticClientExtension.cs" />
     <Compile Include="Extensions\QueryDescriptorExtension.cs" />
+    <Compile Include="Extensions\ReflectionExtension.cs" />
     <Compile Include="IComponentResolver.cs" />
-    <Compile Include="IElasticRootPagedDAO.cs" />
+    <Compile Include="IElasticRootPagedDAO.cs">
+      <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
+    </Compile>
     <Compile Include="IElasticTransactionProvider.cs" />
     <Compile Include="Impl\ElasticSession.cs">
       <SubType>Code</SubType>
@@ -108,9 +111,6 @@
     <Compile Include="Proxy\DocumentAdapterResolver.cs" />
     <Compile Include="Proxy\ProxyGenerator.cs" />
     <Compile Include="Resolvers\DynamicContractResolver.cs" />
-    <Compile Include="Util.cs">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="PersistentLayer.license.txt" />

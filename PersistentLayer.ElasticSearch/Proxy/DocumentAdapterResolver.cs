@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
 
 namespace PersistentLayer.ElasticSearch.Proxy
 {
@@ -21,25 +20,25 @@ namespace PersistentLayer.ElasticSearch.Proxy
             this.beforeBuilding = beforeBuilding;
             this.adapters = new HashSet<DocumentAdapter>();
         }
-        
-        public DocumentAdapter Resolve<TFinder>()
+
+        public DocumentAdapter Resolve<TKeyType>()
         {
-            return this.Resolve(typeof(TFinder));
+            return this.Resolve(typeof(TKeyType));
         }
 
-        public DocumentAdapter Resolve(Type typeFinder)
+        public DocumentAdapter Resolve(Type keyType)
         {
-            var adapter = this.adapters.FirstOrDefault(documentAdapter => documentAdapter.SourceType == typeFinder);
+            var adapter = this.adapters.FirstOrDefault(documentAdapter => documentAdapter.SourceType == keyType);
             if (adapter == null)
             {
-                var typeBuilder = this.moduleBuilder.BuildProxyOrWrapper(typeFinder);
+                var typeBuilder = this.moduleBuilder.BuildProxyOrWrapper(keyType);
                 if (this.beforeBuilding != null)
                 {
                     this.beforeBuilding.Invoke(typeBuilder);
                 }
 
                 var adpterType = typeBuilder.CreateType();
-                adapter = new DocumentAdapter(typeFinder, adpterType, this.mergerAction);
+                adapter = new DocumentAdapter(keyType, adpterType, this.mergerAction);
                 this.adapters.Add(adapter);
             }
 

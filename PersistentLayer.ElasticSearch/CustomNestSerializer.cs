@@ -96,7 +96,6 @@ namespace PersistentLayer.ElasticSearch
                 properties.AddRange(arrayProperty.Where(n => n.Type == JTokenType.Object).Select(n => n as JObject));
             }
 
-
             bool ret = token.Remove("$type");
             return properties.Aggregate(ret, (current, property) => this.RemoveTypeProperty(property) || current);
         }

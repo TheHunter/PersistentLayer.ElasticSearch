@@ -1,4 +1,5 @@
 ﻿using System;
+using PersistentLayer.ElasticSearch.Extensions;
 using PersistentLayer.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.KeyGeneration

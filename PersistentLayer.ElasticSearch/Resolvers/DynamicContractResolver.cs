@@ -4,7 +4,6 @@ using System.Dynamic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Nest;
 using Nest.Resolvers;
 using Newtonsoft.Json;
@@ -71,7 +70,7 @@ namespace PersistentLayer.ElasticSearch.Resolvers
             }
             else if (contract is JsonDictionaryContract)
             {
-                Func<string, string> func = propertyName => this.inferrer.IndexName(propertyName).ToLower(CultureInfo.InvariantCulture);
+                Func<string, string> func = propertyName => this.inferrer.IndexName(propertyName);
                 ctr.PropertyNameResolver = func;
             }
             

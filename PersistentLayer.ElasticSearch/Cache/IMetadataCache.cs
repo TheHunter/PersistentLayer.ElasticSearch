@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using PersistentLayer.ElasticSearch.Metadata;
 
 namespace PersistentLayer.ElasticSearch.Cache
@@ -21,24 +19,17 @@ namespace PersistentLayer.ElasticSearch.Cache
         string Index { get; }
 
         /// <summary>
-        /// Cacheds the specified ids.
+        /// Verifies if the documents with the indicated ids are cached with the specified index.
         /// </summary>
-        /// <typeparam name="TEntity">
-        /// The type of the entity.
-        /// </typeparam>
-        /// <param name="index">
-        /// The index.
-        /// </param>
-        /// <param name="ids">
-        /// The ids.
-        /// </param>
-        /// <returns>
-        /// </returns>
+        /// <typeparam name="TEntity">The type of the entity.</typeparam>
+        /// <param name="index">The index.</param>
+        /// <param name="ids">The ids.</param>
+        /// <returns></returns>
         bool Cached<TEntity>(string index = null, params string[] ids)
             where TEntity : class;
 
         /// <summary>
-        /// Cacheds the specified instance type.
+        /// Caches the specified instance type.
         /// </summary>
         /// <param name="instanceType">KeyGenType of the instance.</param>
         /// <param name="index">Index name which documents will be saved</param>

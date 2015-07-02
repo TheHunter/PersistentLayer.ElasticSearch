@@ -9,6 +9,7 @@ namespace PersistentLayer.ElasticSearch.KeyGeneration
     /// Rappresents a key generator container used for resolving identifier generators.
     /// </summary>
     public class KeyGeneratorResolver
+        : IComponentResolver<KeyGenStrategy>
     {
         private readonly HashSet<KeyGenStrategy> keyGenerators;
 
@@ -36,25 +37,25 @@ namespace PersistentLayer.ElasticSearch.KeyGeneration
         /// <summary>
         /// Resolves this instance.
         /// </summary>
-        /// <typeparam name="TId">The type of the identifier.</typeparam>
+        /// <typeparam name="TKeyType">The type of the identifier.</typeparam>
         /// <returns></returns>
-        public KeyGenStrategy Resolve<TId>()
+        public KeyGenStrategy Resolve<TKeyType>()
         {
-            return this.Resolve(typeof(TId));
+            return this.Resolve(typeof(TKeyType));
         }
 
         /// <summary>
         /// Resolves the specified type identifier.
         /// </summary>
-        /// <param name="typeId">The type identifier.</param>
+        /// <param name="keyType">The type identifier.</param>
         /// <returns></returns>
         /// <exception cref="InvalidIdentifierException">Error</exception>
-        public KeyGenStrategy Resolve(Type typeId)
+        public KeyGenStrategy Resolve(Type keyType)
         {
-            var keyGenerator = this.keyGenerators.FirstOrDefault(generator => generator.KeyType == typeId);
+            var keyGenerator = this.keyGenerators.FirstOrDefault(generator => generator.KeyType == keyType);
             if (keyGenerator == null)
             {
-                throw new InvalidIdentifierException(string.Format("The type of key generation cannot be resolved because the key type is not registered and cannot be resolved by this framework, It's needed to define a newone in order to register, type: {0}", typeId.Name));
+                throw new InvalidIdentifierException(string.Format("The type of key generation cannot be resolved because the key type is not registered and cannot be resolved by this framework, It's needed to define a newone in order to register, type: {0}", keyType.Name));
             }
             return keyGenerator;
         }

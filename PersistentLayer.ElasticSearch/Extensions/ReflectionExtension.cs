@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
-namespace PersistentLayer.ElasticSearch
+namespace PersistentLayer.ElasticSearch.Extensions
 {
-    public static class Util
+    public static class ReflectionExtension
     {
         private static readonly Type FunctionGetter;
         private static readonly Type FunctionSetter;
 
-        static Util()
+        static ReflectionExtension()
         {
             FunctionGetter = typeof(Func<,>);
             FunctionSetter = typeof(Action<,>);
@@ -89,6 +87,12 @@ namespace PersistentLayer.ElasticSearch
 
             var ret = Activator.CreateInstance(type, true);
             return ret;
+        }
+
+        public static bool Implements(this Type type, params Type[] interfaceTypes)
+        {
+            var interfaces = type.GetInterfaces();
+            return interfaceTypes.All(t => interfaces.FirstOrDefault(current => current == t) != null);
         }
     }
 }
