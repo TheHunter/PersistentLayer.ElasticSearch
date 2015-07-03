@@ -54,6 +54,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache\ISessionCache.cs" />
+    <Compile Include="Cache\SessionCacheImpl.cs" />
     <Compile Include="CustomNestSerializer.cs" />
     <Compile Include="Extensions\ElasticClientExtension.cs" />
     <Compile Include="Extensions\QueryDescriptorExtension.cs" />

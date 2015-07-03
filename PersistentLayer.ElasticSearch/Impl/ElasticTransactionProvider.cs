@@ -20,17 +20,21 @@ namespace PersistentLayer.ElasticSearch.Impl
         /// </summary>
         private const string DefaultNaming = "anonymous";
         private readonly Stack<ITransactionInfo> transactions;
+        private readonly ElasticSession session;
 
         public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
         {
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
-            this.Session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, keyResolver, adapterResolver, client);
+            this.session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, keyResolver, adapterResolver, client);
         }
 
         public IElasticClient Client { get; private set; }
 
-        public IElasticSession Session { get; private set; }
+        public IElasticSession Session
+        {
+            get { return this.Session; }
+        }
 
         public bool Exists(string name)
         {
@@ -72,6 +76,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 var status = this.Client.Ping();
                 if (!status.ConnectionStatus.Success)
                     throw new BusinessLayerException("The service doesn't respond.", "BeginTransaction");
+
+                // qui occorre rendere modificabili i metadati.
             }
             this.transactions.Push(info);
         }
@@ -86,6 +92,9 @@ namespace PersistentLayer.ElasticSearch.Impl
                     try
                     {
                         this.Session.Flush();
+
+                        // occorre convertire tutti i metadati in modalità readonly!
+
                         this.transactions.Pop();
                     }
                     catch (Exception ex)

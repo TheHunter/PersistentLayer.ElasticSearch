@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection.Emit;
+using System.Net.Mime;
 using Nest;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
@@ -19,11 +18,10 @@ using PersistentLayer.Exceptions;
 namespace PersistentLayer.ElasticSearch.Impl
 {
     public class ElasticSession
-        : IElasticSession
+        : SessionCacheImpl, IElasticSession
     {
         private const string SessionFieldName = "$idsession";
         private readonly Func<bool> tranInProgress;
-        private readonly MetadataCache localCache;
         private readonly MetadataEvaluator evaluator;
         private readonly MapperDescriptorResolver mapResolver;
         private readonly KeyGeneratorResolver keyStrategyResolver;
@@ -33,6 +31,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly DocumentAdapterResolver adapterResolver;
 
         public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
+            : base(indexName, client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
@@ -43,7 +42,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.idResolver = new CustomIdResolver();
 
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            this.localCache = new MetadataCache(this.Index, client);
+            //this.localCache = new MetadataCache(this.Index, client);
             this.evaluator = new MetadataEvaluator
             {
                 Serializer = serializer,
@@ -72,7 +71,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var idStr = id.ToString();
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
-            var metadata = this.localCache.SingleOrDefault(idStr, typeName, indexName);
+            var metadata = this.SingleOrDefault(idStr, typeName);
 
             if (metadata != null)
                 return metadata.Instance as dynamic;
@@ -105,7 +104,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return null;
 
             if (this.TranInProgress)
-                this.localCache.Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage));
 
             return firstRequest.Source;
         }
@@ -119,7 +118,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             var idsToHit = new List<string>();
 
-            var metadata = this.localCache.FindMetadata(typeName, indexName)
+            var metadata = this.FindMetadata(typeName)
                 .ToArray();
 
             foreach (var id in ids.Select(n => n.ToString()))
@@ -147,7 +146,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             foreach (var hit in response.Hits)
             {
-                this.localCache.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
                 list.Add(hit.Source);
             }
 
@@ -175,12 +174,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             var docs = new List<TEntity>();
             foreach (var hit in response.Hits)
             {
-                var metadata = this.localCache.SingleOrDefault(hit.Id, hit.Type, hit.Index);
+                var metadata = this.SingleOrDefault(hit.Id, hit.Type);
 
                 if (metadata == null)
                 {
                     docs.Add(hit.Source);
-                    this.localCache.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
+                    this.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
                 }
                 else
                 {
@@ -278,7 +277,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                            this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                            this.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
 
                             return entity;
                         }
@@ -324,7 +323,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private void UpdateInstance<TEntity>(TEntity entity, string id, string typeName, string index = null, string version = null)
             where TEntity : class
         {
-            var cached = this.localCache.SingleOrDefault(id, typeName, index);
+            var cached = this.SingleOrDefault(id, typeName);
 
             if (cached != null)
             {
@@ -338,7 +337,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Found)
                     throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version));
+                this.Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version));
             }
         }
 
@@ -361,7 +360,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var idStr = id;
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
-            var cached = this.localCache.SingleOrDefault(idStr, typeName, indexName);
+            var cached = this.SingleOrDefault(idStr, typeName);
 
             if (cached != null)
             {
@@ -387,7 +386,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.localCache.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                this.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
             }
             
             return entity;
@@ -399,7 +398,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return;
 
-            this.localCache.Detach(index ?? this.Index, entities);
+            this.Detach(entities);
         }
 
         public void MakeTransient<TEntity>(string index = null, params object[] ids)
@@ -409,7 +408,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return;
 
             var local = ids.Select(n => n.ToString());
-            this.localCache.Detach<TEntity>(index ?? this.Index, local.ToArray());
+            this.Detach<TEntity>(local.ToArray());
         }
 
         public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
@@ -437,12 +436,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return response.Source;
 
-            var metadata = this.localCache.SingleOrDefault(id, typeName, indexName);
+            var metadata = this.SingleOrDefault(id, typeName);
             var res = response.AsMetadata(this.evaluator, OriginContext.Storage);
 
             if (metadata == null)
             {
-                this.localCache.Attach(res);
+                this.Attach(res);
                 return response.Source;
             }
 
@@ -471,46 +470,210 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool Cached<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            return this.localCache.Cached<TEntity>(index ?? this.Index, ids.Select(n => n.ToString()).ToArray());
+            return this.Cached<TEntity>(ids.Select(n => n.ToString()).ToArray());
         }
 
         public bool Cached(string index = null, params object[] instances)
         {
-            return this.localCache.Cached(index ?? this.Index, instances);
+            return this.Cached(instances);
         }
 
         public bool Dirty(params object[] instances)
         {
-            return this.localCache.FindMetadata(instances: instances).All(info => info.HasChanged());
+            return this.FindMetadata(instances).All(info => info.HasChanged());
         }
 
         public bool Dirty()
         {
-            return this.localCache.MetadataExpression(infos => infos.Any(info => info.HasChanged()));
+            return this.Metadata.Any(worker => worker.HasChanged());
         }
 
         public void Evict(string index = null, params object[] instances)
         {
-            this.localCache.Detach(index ?? this.Index, instances);
+            this.Detach(instances);
         }
 
         public void Evict<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            this.localCache.Detach(index ?? this.Index, ids.Select(n => n.ToString()).ToArray());
+            this.Detach(ids.Select(n => n.ToString()).ToArray());
         }
 
         public void Evict()
         {
-            this.localCache.Clear();
+            var toRemove = this.Metadata.ToList();
+
+            if (!toRemove.Any())
+                return;
+
+            IBulkRequest request = new BulkRequest();
+
+            foreach (var metadata in toRemove)
+            {
+                if (metadata.Origin == OriginContext.Newone)
+                {
+                    request.Operations.Add(
+                        new BulkDeleteOperation<object>(metadata.Id)
+                        {
+                            Index = metadata.IndexName,
+                            Type = metadata.TypeName,
+                            Version = metadata.Version
+                        });
+                }
+            }
+
+            IBulkResponse response = this.Client.Bulk(request);
+            if (response.ItemsWithErrors.Any())
+                throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
+                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
+            
+            this.Clear();
         }
 
         public void Flush()
         {
             if (!this.TranInProgress)
                 return;
-            this.localCache.Flush();
-        }        
+
+            IBulkRequest request = new BulkRequest();
+            request.Operations = new List<IBulkOperation>();
+
+            var metadataToPersist = this.Metadata.Where(info => info.Origin == OriginContext.Newone || info.HasChanged())
+                .ToList();
+
+            if (!metadataToPersist.Any())
+                return;
+
+            foreach (var metadata in metadataToPersist)
+            {
+                request.Operations.Add(
+                    new BulkUpdateOperation<object, object>(metadata.Id)
+                    {
+                        Index = metadata.IndexName,
+                        Type = metadata.TypeName,
+                        Version = metadata.Version,
+                        Doc = metadata.Instance,
+                    }
+                    );
+            }
+
+            var response = this.Client.Bulk(request);
+            if (response.Errors)
+            {
+                Exception innerException;
+                try
+                {
+                    this.Restore(response.Items);
+                    innerException = null;
+                }
+                catch (Exception ex)
+                {
+                    innerException = ex;
+                }
+
+                const string message = "There are problems when some instances were processed by clear operation.";
+                BulkOperationException exception = innerException == null
+                    ? new BulkOperationException(message, response.ItemsWithErrors.Select(item => item.ToDocumentResponse()))
+                    : new BulkOperationException(message, innerException, response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
+
+                throw exception;
+            }
+
+            // everything was gone well.. so It's requeried to update metadata with bulk response
+            // so Version and Origin (for new instances).
+            foreach (var item in response.Items)
+            {
+                var metadata = this.SingleOrDefault(item.Id, item.Type);
+                if (metadata == null)
+                    continue;
+
+                metadata.BecomePersistent(item.Version);
+
+                #region
+
+                if (metadata.Origin == OriginContext.Newone)
+                {
+                    BulkOperationResponseItem current = item;
+                    var respo = this.Client.Update<object>(descriptor => descriptor
+                        .Id(current.Id)
+                        .Type(current.Type)
+                        .Index(this.Index)
+                        .Version(Convert.ToInt64(current.Version))
+                        .Script(string.Format("ctx._source.remove(\"{0}\")", "\\" + SessionFieldName))
+                        );
+
+                    if (respo.IsValid)
+                    {
+                        metadata.BecomePersistent(respo.Version);
+                    }
+                    else
+                    {
+                        // It's needed to write this error into a log file...
+                    }
+                }
+                else
+                {
+                    metadata.BecomePersistent(item.Version);
+                }
+
+                #endregion
+            }
+        }
+
+        private void Restore(IEnumerable<BulkOperationResponseItem> instancesToRestore)
+        {
+            // here It's requeried to restore instances which are persisted correctly.
+            Func<IMetadataWorker, BulkOperationResponseItem, bool> func = (info, item) =>
+                info.Id.Equals(item.Id, StringComparison.InvariantCulture)
+                && info.TypeName.Equals(item.Type)
+                && info.IndexName.Equals(item.Index);
+
+            IBulkRequest request = new BulkRequest();
+
+            foreach (var item in instancesToRestore.Where(item => item.IsValid))
+            {
+                //var metadata = this.localCache.FirstOrDefault(info => func(info, item));
+                var metadata = this.Metadata.FirstOrDefault(info => func(info, item));
+                if (metadata != null)
+                {
+                    if (metadata.Origin == OriginContext.Newone)
+                    {
+                        request.Operations.Add(
+                            new BulkDeleteOperation<object>(metadata.Id)
+                            {
+                                Index = metadata.IndexName,
+                                Type = metadata.TypeName,
+                                Version = metadata.Version
+                            });
+                    }
+                    else
+                    {
+                        if (metadata.PreviousStatus.Instance != null)
+                        {
+                            request.Operations.Add(
+                            new BulkUpdateOperation<object, object>(metadata.Id)
+                            {
+                                Index = metadata.IndexName,
+                                Type = metadata.TypeName,
+                                Version = metadata.Version,
+                                Doc = metadata.PreviousStatus.Instance,
+                                RetriesOnConflict = 2
+                            });
+                        }
+
+                        // if (response.IsValid)
+                        //    metadata.Restore(item.Version);
+                    }
+                }
+            }
+
+            var response = this.Client.Bulk(request);
+            if (response.Errors)
+            {
+                throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
+                response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
+            }
+        }
 
         private object AsDocumentSession(object instance)
         {
@@ -528,8 +691,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             return destination;
         }
 
-        private IDocumentMapper GetDocumentMapper<TEntity>(string index)
-            where TEntity : class
+        private IDocumentMapper GetDocumentMapper<TEntity>(string index) where TEntity : class
         {
             Type docType = typeof(TEntity);
             IDocumentMapper current = this.docMappers.FirstOrDefault(mapper => mapper.DocumentType == docType);

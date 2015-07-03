@@ -158,15 +158,11 @@ namespace PersistentLayer.ElasticSearch.Cache
 
         public bool Detach<TEntity>(string index = null, params string[] ids) where TEntity : class
         {
-            this.ThrowIfDisposed();
-
             return this.Detach(this.client.Infer.TypeName<TEntity>(), index, ids);
         }
 
         public bool Detach(Type instanceType, string index = null, params string[] ids)
         {
-            this.ThrowIfDisposed();
-
             return this.Detach(this.client.Infer.TypeName(instanceType), index, ids);
         }
 
