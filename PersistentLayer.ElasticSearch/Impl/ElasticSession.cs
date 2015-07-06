@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Mime;
 using Nest;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
@@ -18,10 +17,11 @@ using PersistentLayer.Exceptions;
 namespace PersistentLayer.ElasticSearch.Impl
 {
     public class ElasticSession
-        : SessionCacheImpl, IElasticSession
+        //: SessionCacheImpl, IElasticSession
+        : IElasticSession
     {
         private const string SessionFieldName = "$idsession";
-        private readonly Func<bool> tranInProgress;
+        private readonly ElasticTransactionProvider transactionProvider;
         private readonly MetadataEvaluator evaluator;
         private readonly MapperDescriptorResolver mapResolver;
         private readonly KeyGeneratorResolver keyStrategyResolver;
@@ -29,20 +29,19 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly HashSet<IDocumentMapper> docMappers;
         private readonly CustomIdResolver idResolver;
         private readonly DocumentAdapterResolver adapterResolver;
+        private readonly HashSet<SessionCacheImpl> indexLocalCache;
 
-        public ElasticSession(string indexName, Func<bool> tranInProgress, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
-            : base(indexName, client)
+        public ElasticSession(string indexName, ElasticTransactionProvider transactionProvider, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
-            this.tranInProgress = tranInProgress;
+            this.transactionProvider = transactionProvider;
             this.mapResolver = mapResolver;
             this.keyStrategyResolver = keyStrategyResolver;
             this.Client = client;
             this.idResolver = new CustomIdResolver();
 
             Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            //this.localCache = new MetadataCache(this.Index, client);
             this.evaluator = new MetadataEvaluator
             {
                 Serializer = serializer,
@@ -52,6 +51,36 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.keyGenerators = new HashSet<ElasticKeyGenerator>();
             this.docMappers = new HashSet<IDocumentMapper>(new DocumentMapperComparer());
             this.adapterResolver = adapterResolver;
+            this.indexLocalCache = new HashSet<SessionCacheImpl>
+            {
+                new SessionCacheImpl(indexName, client)
+            };
+
+            transactionProvider.OnBeginTransaction(this.OnBeginTransaction);
+            transactionProvider.OnCommitTransaction(this.OnEndTransaction);
+            transactionProvider.OnRollbackTransaction(this.OnEndTransaction);
+        }
+
+        private void OnBeginTransaction()
+        {
+            foreach (var sessionCacheImpl in this.indexLocalCache.AsParallel())
+            {
+                foreach (var source in sessionCacheImpl.Metadata)
+                {
+                    source.AsReadOnly(false);
+                }
+            }
+        }
+
+        private void OnEndTransaction()
+        {
+            foreach (var sessionCacheImpl in this.indexLocalCache.AsParallel())
+            {
+                foreach (var source in sessionCacheImpl.Metadata)
+                {
+                    source.AsReadOnly();
+                }
+            }
         }
 
         public string Id { get; private set; }
@@ -60,7 +89,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         protected bool TranInProgress
         {
-            get { return this.tranInProgress.Invoke(); }
+            get { return this.transactionProvider.InProgress; }
         }
 
         public IElasticClient Client { get; private set; }
@@ -71,7 +100,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var idStr = id.ToString();
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
-            var metadata = this.SingleOrDefault(idStr, typeName);
+            var metadata = this.GetCache(indexName).SingleOrDefault(idStr, typeName);
 
             if (metadata != null)
                 return metadata.Instance as dynamic;
@@ -104,7 +133,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return null;
 
             if (this.TranInProgress)
-                this.Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.GetCache(indexName).Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage));
 
             return firstRequest.Source;
         }
@@ -118,7 +147,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             var idsToHit = new List<string>();
 
-            var metadata = this.FindMetadata(typeName)
+            var metadata = this.GetCache(indexName).FindMetadata(typeName)
                 .ToArray();
 
             foreach (var id in ids.Select(n => n.ToString()))
@@ -146,7 +175,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             foreach (var hit in response.Hits)
             {
-                this.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
                 list.Add(hit.Source);
             }
 
@@ -156,6 +185,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         public IEnumerable<TEntity> FindAll<TEntity>(string index = null)
             where TEntity : class
         {
+            var indexName = index ?? this.Index;
             var response = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(index ?? this.Index)
                 .From(0)
@@ -174,12 +204,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             var docs = new List<TEntity>();
             foreach (var hit in response.Hits)
             {
-                var metadata = this.SingleOrDefault(hit.Id, hit.Type);
+                var metadata = this.GetCache(indexName).SingleOrDefault(hit.Id, hit.Type);
 
                 if (metadata == null)
                 {
                     docs.Add(hit.Source);
-                    this.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
+                    this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
                 }
                 else
                 {
@@ -277,7 +307,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                            this.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                            this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
 
                             return entity;
                         }
@@ -323,7 +353,8 @@ namespace PersistentLayer.ElasticSearch.Impl
         private void UpdateInstance<TEntity>(TEntity entity, string id, string typeName, string index = null, string version = null)
             where TEntity : class
         {
-            var cached = this.SingleOrDefault(id, typeName);
+            var indexName = index ?? this.Index;
+            var cached = this.GetCache(indexName).SingleOrDefault(id, typeName);
 
             if (cached != null)
             {
@@ -337,7 +368,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Found)
                     throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
-                this.Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version));
+                this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version));
             }
         }
 
@@ -360,7 +391,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var idStr = id;
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
-            var cached = this.SingleOrDefault(idStr, typeName);
+            var cached = this.GetCache(indexName).SingleOrDefault(idStr, typeName);
 
             if (cached != null)
             {
@@ -386,7 +417,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
             }
             
             return entity;
@@ -398,7 +429,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return;
 
-            this.Detach(entities);
+            var indexName = index ?? this.Index;
+            this.GetCache(indexName).Detach(entities);
         }
 
         public void MakeTransient<TEntity>(string index = null, params object[] ids)
@@ -408,7 +440,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return;
 
             var local = ids.Select(n => n.ToString());
-            this.Detach<TEntity>(local.ToArray());
+            var indexName = index ?? this.Index;
+            this.GetCache(indexName).Detach<TEntity>(local.ToArray());
         }
 
         public void MakeTransient<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
@@ -436,12 +469,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return response.Source;
 
-            var metadata = this.SingleOrDefault(id, typeName);
+            var metadata = this.GetCache(indexName).SingleOrDefault(id, typeName);
             var res = response.AsMetadata(this.evaluator, OriginContext.Storage);
 
             if (metadata == null)
             {
-                this.Attach(res);
+                this.GetCache(indexName).Attach(res);
                 return response.Source;
             }
 
@@ -470,38 +503,46 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool Cached<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            return this.Cached<TEntity>(ids.Select(n => n.ToString()).ToArray());
+            return this.GetCache(index ?? this.Index).Cached<TEntity>(ids.Select(n => n.ToString()).ToArray());
         }
 
         public bool Cached(string index = null, params object[] instances)
         {
-            return this.Cached(instances);
+            return this.GetCache(index ?? this.Index).Cached(instances);
         }
 
         public bool Dirty(params object[] instances)
         {
-            return this.FindMetadata(instances).All(info => info.HasChanged());
+            return this.indexLocalCache.Any(impl => impl.FindMetadata(instances).All(info => info.HasChanged()));
         }
 
         public bool Dirty()
         {
-            return this.Metadata.Any(worker => worker.HasChanged());
+            return this.indexLocalCache.Any(impl => impl.Metadata.Any(worker => worker.HasChanged()));
         }
 
         public void Evict(string index = null, params object[] instances)
         {
-            this.Detach(instances);
+            this.GetCache(index ?? this.Index).Detach(instances);
         }
 
         public void Evict<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            this.Detach(ids.Select(n => n.ToString()).ToArray());
+            this.GetCache(index ?? this.Index).Detach(ids.Select(n => n.ToString()).ToArray());
         }
 
         public void Evict()
         {
-            var toRemove = this.Metadata.ToList();
+            foreach (var cache in this.indexLocalCache.AsParallel())
+            {
+                this.Evict(cache);
+            }
+        }
+
+        private void Evict(ISessionCache cache)
+        {
+            var toRemove = cache.Metadata.ToList();
 
             if (!toRemove.Any())
                 return;
@@ -526,8 +567,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (response.ItemsWithErrors.Any())
                 throw new BulkOperationException("There are problems when some instances were processed by clear operation.",
                     response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
-            
-            this.Clear();
+
+            cache.Clear();
         }
 
         public void Flush()
@@ -535,10 +576,18 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!this.TranInProgress)
                 return;
 
+            foreach (var cache in this.indexLocalCache.AsParallel())
+            {
+                this.Flush(cache);
+            }
+        }
+
+        private void Flush(ISessionCache cache)
+        {
             IBulkRequest request = new BulkRequest();
             request.Operations = new List<IBulkOperation>();
 
-            var metadataToPersist = this.Metadata.Where(info => info.Origin == OriginContext.Newone || info.HasChanged())
+            var metadataToPersist = cache.Metadata.Where(info => info.Origin == OriginContext.Newone || info.HasChanged())
                 .ToList();
 
             if (!metadataToPersist.Any())
@@ -563,7 +612,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 Exception innerException;
                 try
                 {
-                    this.Restore(response.Items);
+                    this.Restore(cache, response.Items);
                     innerException = null;
                 }
                 catch (Exception ex)
@@ -583,7 +632,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             // so Version and Origin (for new instances).
             foreach (var item in response.Items)
             {
-                var metadata = this.SingleOrDefault(item.Id, item.Type);
+                var metadata = cache.SingleOrDefault(item.Id, item.Type);
                 if (metadata == null)
                     continue;
 
@@ -620,7 +669,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
         }
 
-        private void Restore(IEnumerable<BulkOperationResponseItem> instancesToRestore)
+        private void Restore(ISessionCache cache, IEnumerable<BulkOperationResponseItem> instancesToRestore)
         {
             // here It's requeried to restore instances which are persisted correctly.
             Func<IMetadataWorker, BulkOperationResponseItem, bool> func = (info, item) =>
@@ -632,8 +681,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             foreach (var item in instancesToRestore.Where(item => item.IsValid))
             {
-                //var metadata = this.localCache.FirstOrDefault(info => func(info, item));
-                var metadata = this.Metadata.FirstOrDefault(info => func(info, item));
+                var metadata = cache.Metadata.FirstOrDefault(info => func(info, item));
                 if (metadata != null)
                 {
                     if (metadata.Origin == OriginContext.Newone)
@@ -747,5 +795,19 @@ namespace PersistentLayer.ElasticSearch.Impl
             return current;
         }
 
+        private ISessionCache GetCache(string indexName)
+        {
+            var cache =
+                this.indexLocalCache.FirstOrDefault(
+                    impl => impl.Index.Equals(indexName, StringComparison.InvariantCultureIgnoreCase));
+
+            if (cache == null)
+            {
+                cache = new SessionCacheImpl(indexName, this.Client);
+                this.indexLocalCache.Add(cache);
+            }
+
+            return cache;
+        }
     }
 }

@@ -21,12 +21,18 @@ namespace PersistentLayer.ElasticSearch.Impl
         private const string DefaultNaming = "anonymous";
         private readonly Stack<ITransactionInfo> transactions;
         private readonly ElasticSession session;
+        private readonly Dictionary<TransactionOperations, List<Action>> tranActionActions;
 
         public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
         {
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
-            this.session = new ElasticSession(client.Infer.DefaultIndex, () => this.InProgress, jsonSettings, mapResolver, keyResolver, adapterResolver, client);
+            this.tranActionActions = new Dictionary<TransactionOperations, List<Action>>();
+            this.tranActionActions.Add(TransactionOperations.Begin, new List<Action>());
+            this.tranActionActions.Add(TransactionOperations.Commit, new List<Action>());
+            this.tranActionActions.Add(TransactionOperations.Rollback, new List<Action>());
+
+            this.session = new ElasticSession(client.Infer.DefaultIndex, this, jsonSettings, mapResolver, keyResolver, adapterResolver, client);
         }
 
         public IElasticClient Client { get; private set; }
@@ -77,9 +83,15 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!status.ConnectionStatus.Success)
                     throw new BusinessLayerException("The service doesn't respond.", "BeginTransaction");
 
-                // qui occorre rendere modificabili i metadati.
+                this.tranActionActions[TransactionOperations.Begin].ForEach(action => action.Invoke());
             }
             this.transactions.Push(info);
+        }
+
+        public void OnBeginTransaction(Action action)
+        {
+            if (action != null)
+                this.tranActionActions[TransactionOperations.Begin].Add(action);
         }
 
         public void CommitTransaction()
@@ -92,9 +104,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                     try
                     {
                         this.Session.Flush();
-
-                        // occorre convertire tutti i metadati in modalità readonly!
-
+                        this.tranActionActions[TransactionOperations.Commit].ForEach(action => action.Invoke());
                         this.transactions.Pop();
                     }
                     catch (Exception ex)
@@ -110,9 +120,21 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
         }
 
+        public void OnCommitTransaction(Action action)
+        {
+            if (action != null)
+                this.tranActionActions[TransactionOperations.Commit].Add(action);
+        }
+
         public void RollbackTransaction()
         {
             this.RollbackTransaction(null);
+        }
+
+        public void OnRollbackTransaction(Action action)
+        {
+            if (action != null)
+                this.tranActionActions[TransactionOperations.Rollback].Add(action);
         }
 
         public void RollbackTransaction(Exception cause)
@@ -120,6 +142,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (this.transactions.Count > 0)
             {
                 this.Session.Evict();
+                this.tranActionActions[TransactionOperations.Rollback].ForEach(action => action.Invoke());
                 var info = this.transactions.Pop();
 
                 if (this.transactions.Count > 0)
@@ -134,5 +157,12 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             get { return this.transactions.Count > 0; }
         }
+    }
+
+    public enum TransactionOperations
+    {
+        Begin = 1,
+        Commit = 2,
+        Rollback = 3
     }
 }

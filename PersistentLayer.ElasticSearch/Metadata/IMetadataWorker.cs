@@ -45,5 +45,11 @@
         /// </summary>
         /// <param name="version">The version.</param>
         void BecomePersistent(string version);
+
+        /// <summary>
+        /// Makes read only this instance due to the argument value.
+        /// </summary>
+        /// <param name="value">if set to <c>true</c> [value].</param>
+        void AsReadOnly(bool value = true);
     }
 }

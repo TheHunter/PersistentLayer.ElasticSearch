@@ -8,8 +8,9 @@ namespace PersistentLayer.ElasticSearch.Metadata
     public class MetadataWorker
         : MetadataInfo, IMetadataWorker
     {
+        private readonly MetadataEvaluator evaluator;
         private object emptyReference;
-        private MetadataEvaluator evaluator;
+        private bool readOnly = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MetadataWorker"/> class.
@@ -26,7 +27,14 @@ namespace PersistentLayer.ElasticSearch.Metadata
             : base(id, indexName, typeName, currentStatus, currentStatus, version)
         {
             var originalStatus = Activator.CreateInstance(this.InstanceType, true);
-            this.OnInit(evaluator, originalStatus, origin);
+
+            if (evaluator == null)
+                throw new ArgumentNullException("evaluator", "The evaluator cannot be null.");
+
+            this.evaluator = evaluator;
+            this.evaluator.Merge.Invoke(this.Instance, originalStatus);
+
+            this.OnInit(originalStatus, origin);
         }
 
         /// <summary>
@@ -48,24 +56,27 @@ namespace PersistentLayer.ElasticSearch.Metadata
             if (originalStatus.GetType() != currentStatus.GetType())
                 throw new ArgumentException("the current status has a different type than original status, verify its type before applying a current status.");
 
-            this.OnInit(evaluator, originalStatus, origin);
+            if (evaluator == null)
+                throw new ArgumentNullException("evaluator", "The evaluator cannot be null.");
+
+            this.evaluator = evaluator;
+            this.OnInit(originalStatus, origin);
         }
 
         /// <summary>
         /// Called when [initialize].
         /// </summary>
-        /// <param name="evaluator">The evaluator.</param>
-        /// <param name="originalStatus">The original status.</param>
-        /// <param name="origin">The origin.</param>
-        /// <exception cref="System.ArgumentNullException">evaluator;The evaluator cannot be null.</exception>
-        private void OnInit(MetadataEvaluator evaluator, object originalStatus, OriginContext origin)
+        /// <param name="originalStatus">
+        /// The original status.
+        /// </param>
+        /// <param name="origin">
+        /// The origin.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// evaluator;The evaluator cannot be null.
+        /// </exception>
+        private void OnInit(object originalStatus, OriginContext origin)
         {
-            if (evaluator == null)
-                throw new ArgumentNullException("evaluator", "The evaluator cannot be null.");
-
-            this.evaluator = evaluator;
-            this.evaluator.Merge.Invoke(this.Instance, originalStatus);
-
             this.PreviousStatus = new MetadataInfo(this.Id, this.IndexName, this.TypeName, originalStatus, this.Version);
             this.Origin = origin;
 
@@ -95,6 +106,9 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// <returns></returns>
         public bool HasChanged()
         {
+            if (this.readOnly)
+                return false;
+
             string currentStatus = this.evaluator.Serializer.Invoke(this.Instance);
             string prevStatus = this.evaluator.Serializer.Invoke(this.PreviousStatus.Instance);
             return !currentStatus.Equals(prevStatus, StringComparison.InvariantCulture);
@@ -149,6 +163,21 @@ namespace PersistentLayer.ElasticSearch.Metadata
                 // here It's needed to set the _idsession property to null.
             }
             this.Version = version;
+        }
+
+        /// <summary>
+        /// Makes read only this instance due to the argument value.
+        /// </summary>
+        /// <param name="value">if set to <c>true</c> [value].</param>
+        public void AsReadOnly(bool value = true)
+        {
+            this.readOnly = value;
+            if (!value)
+            {
+                var originalStatus = Activator.CreateInstance(this.InstanceType, true);
+                this.evaluator.Merge.Invoke(this.Instance, originalStatus);
+                this.PreviousStatus = new MetadataInfo(this.Id, this.IndexName, this.TypeName, originalStatus, this.Version);
+            }
         }
     }
 }
