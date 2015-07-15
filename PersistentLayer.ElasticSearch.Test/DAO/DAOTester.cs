@@ -33,9 +33,9 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
 
             using (var dao = this.MakePagedDao(defaultIndex))
             {
-                var instance = new Person { Name = "Ton", Surname = "Jones" };
+                var instance = new Person { Name = "Ton", Surname = "Jones", Cf = "mycf"};
                 dao.MakePersistent(instance);
-
+                
                 var res = dao.FindBy<Person>(1);
                 Assert.Null(res);
 

@@ -57,14 +57,30 @@ namespace PersistentLayer.ElasticSearch.Extensions
         /// <summary>
         /// To the metadata.
         /// </summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="response">The response.</param>
-        /// <param name="evaluator">The evaluator.</param>
-        /// <param name="origin">The origin.</param>
-        /// <param name="currentState">State of the current.</param>
-        /// <param name="version">The version.</param>
-        /// <returns></returns>
-        public static MetadataWorker AsMetadata<TEntity>(this IGetResponse<TEntity> response, MetadataEvaluator evaluator, OriginContext origin, TEntity currentState = null, string version = null)
+        /// <typeparam name="TEntity">
+        /// The type of the entity.
+        /// </typeparam>
+        /// <param name="response">
+        /// The response.
+        /// </param>
+        /// <param name="evaluator">
+        /// The evaluator.
+        /// </param>
+        /// <param name="origin">
+        /// The origin.
+        /// </param>
+        /// <param name="currentState">
+        /// State of the current.
+        /// </param>
+        /// <param name="version">
+        /// The version.
+        /// </param>
+        /// <param name="readOnly">
+        /// The read Only.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        public static MetadataWorker AsMetadata<TEntity>(this IGetResponse<TEntity> response, IObjectEvaluator evaluator, OriginContext origin, TEntity currentState = null, string version = null, bool readOnly = true)
             where TEntity : class
         {
             version = response.Version ?? version;
@@ -75,14 +91,30 @@ namespace PersistentLayer.ElasticSearch.Extensions
         /// <summary>
         /// Converts into metadata.
         /// </summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="response">The response.</param>
-        /// <param name="evaluator">The evaluator.</param>
-        /// <param name="origin">The origin.</param>
-        /// <param name="currentState">State of the current.</param>
-        /// <param name="version">The version.</param>
-        /// <returns></returns>
-        internal static MetadataWorker AsMetadata<TEntity>(this IHit<TEntity> response, MetadataEvaluator evaluator, OriginContext origin, TEntity currentState = null, string version = null)
+        /// <typeparam name="TEntity">
+        /// The type of the entity.
+        /// </typeparam>
+        /// <param name="response">
+        /// The response.
+        /// </param>
+        /// <param name="evaluator">
+        /// The evaluator.
+        /// </param>
+        /// <param name="origin">
+        /// The origin.
+        /// </param>
+        /// <param name="currentState">
+        /// State of the current.
+        /// </param>
+        /// <param name="version">
+        /// The version.
+        /// </param>
+        /// <param name="readOnly">
+        /// The read Only.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        internal static MetadataWorker AsMetadata<TEntity>(this IHit<TEntity> response, IObjectEvaluator evaluator, OriginContext origin, TEntity currentState = null, string version = null, bool readOnly = true)
             where TEntity : class
         {
             version = response.Version ?? version;
@@ -93,14 +125,30 @@ namespace PersistentLayer.ElasticSearch.Extensions
         /// <summary>
         /// Ases the metadata.
         /// </summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="response">The response.</param>
-        /// <param name="evaluator">The evaluator.</param>
-        /// <param name="origin">The origin.</param>
-        /// <param name="currentState">State of the current.</param>
-        /// <param name="version">The version.</param>
-        /// <returns></returns>
-        internal static MetadataWorker AsMetadata<TEntity>(this IMultiGetHit<TEntity> response, MetadataEvaluator evaluator, OriginContext origin, TEntity currentState = null, string version = null)
+        /// <typeparam name="TEntity">
+        /// The type of the entity.
+        /// </typeparam>
+        /// <param name="response">
+        /// The response.
+        /// </param>
+        /// <param name="evaluator">
+        /// The evaluator.
+        /// </param>
+        /// <param name="origin">
+        /// The origin.
+        /// </param>
+        /// <param name="currentState">
+        /// State of the current.
+        /// </param>
+        /// <param name="version">
+        /// The version.
+        /// </param>
+        /// <param name="readOnly">
+        /// The read Only.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        internal static MetadataWorker AsMetadata<TEntity>(this IMultiGetHit<TEntity> response, IObjectEvaluator evaluator, OriginContext origin, TEntity currentState = null, string version = null, bool readOnly = true)
             where TEntity : class
         {
             version = response.Version ?? version;
@@ -111,15 +159,33 @@ namespace PersistentLayer.ElasticSearch.Extensions
         /// <summary>
         /// Ases the metadata.
         /// </summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="response">The response.</param>
-        /// <param name="evaluator">The evaluator.</param>
-        /// <param name="origin">The origin.</param>
-        /// <param name="instance">The instance.</param>
-        /// <param name="currentState">State of the current.</param>
-        /// <param name="version">The version.</param>
-        /// <returns></returns>
-        internal static MetadataWorker AsMetadata<TEntity>(this IIndexResponse response, MetadataEvaluator evaluator, OriginContext origin, TEntity instance, TEntity currentState = null, string version = null)
+        /// <typeparam name="TEntity">
+        /// The type of the entity.
+        /// </typeparam>
+        /// <param name="response">
+        /// The response.
+        /// </param>
+        /// <param name="evaluator">
+        /// The evaluator.
+        /// </param>
+        /// <param name="origin">
+        /// The origin.
+        /// </param>
+        /// <param name="instance">
+        /// The instance.
+        /// </param>
+        /// <param name="currentState">
+        /// State of the current.
+        /// </param>
+        /// <param name="version">
+        /// The version.
+        /// </param>
+        /// <param name="readOnly">
+        /// The read Only.
+        /// </param>
+        /// <returns>
+        /// </returns>
+        internal static MetadataWorker AsMetadata<TEntity>(this IIndexResponse response, IObjectEvaluator evaluator, OriginContext origin, TEntity instance, TEntity currentState = null, string version = null, bool readOnly = true)
             where TEntity : class
         {
             version = response.Version ?? version;

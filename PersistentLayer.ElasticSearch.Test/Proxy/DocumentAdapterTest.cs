@@ -16,7 +16,7 @@ namespace PersistentLayer.ElasticSearch.Test.Proxy
     public class DocumentAdapterTest
         : BasicElasticConfig
     {
-        private readonly MetadataEvaluator evaluator;
+        private readonly ObjectEvaluator evaluator;
         private readonly ModuleBuilder moduleBuilder;
 
         public DocumentAdapterTest()
@@ -24,12 +24,7 @@ namespace PersistentLayer.ElasticSearch.Test.Proxy
             var jsonSettings = this.MakeJsonSettings(this.MakeSettings("current"));
             jsonSettings.NullValueHandling = NullValueHandling.Include;
 
-            Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            this.evaluator = new MetadataEvaluator
-            {
-                Serializer = serializer,
-                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings)
-            };
+            this.evaluator = new ObjectEvaluator(jsonSettings);
 
             //////////////////////////////////////////////////////////////////////////////////
             var appDomain = AppDomain.CurrentDomain;

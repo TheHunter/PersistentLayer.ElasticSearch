@@ -11,43 +11,43 @@
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Exceptions.BulkOperationException" Collapsed="true">
-    <Position X="12.75" Y="4" Width="1.5" />
+  <Class Name="PersistentLayer.ElasticSearch.Exceptions.BulkOperationException">
+    <Position X="12.75" Y="7.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Exceptions\BulkOperationException.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Exceptions.DuplicatedInstanceException" Collapsed="true">
-    <Position X="15" Y="4" Width="1.5" />
+  <Class Name="PersistentLayer.ElasticSearch.Exceptions.DuplicatedInstanceException">
+    <Position X="15" Y="7.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Exceptions\DuplicatedInstanceException.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Extensions.ElasticClientExtension" Collapsed="true">
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.ElasticClientExtension">
     <Position X="12.75" Y="1" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAgAgAAAACAAAAAEAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Extensions\ElasticClientExtension.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Extensions.MetadataExtension" Collapsed="true">
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.MetadataExtension">
     <Position X="15" Y="1" Width="1.5" />
     <TypeIdentifier>
       <HashCode>ICAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAA=</HashCode>
       <FileName>Extensions\MetadataExtension.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Extensions.QueryDescriptorExtension" Collapsed="true">
-    <Position X="12.75" Y="2.5" Width="1.5" />
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.QueryDescriptorExtension">
+    <Position X="12.75" Y="4" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAEAAAAAAAAAA=</HashCode>
       <FileName>Extensions\QueryDescriptorExtension.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Extensions.ReflectionExtension" Collapsed="true">
-    <Position X="15" Y="2.5" Width="1.5" />
+  <Class Name="PersistentLayer.ElasticSearch.Extensions.ReflectionExtension">
+    <Position X="15" Y="4" Width="1.5" />
     <TypeIdentifier>
       <HashCode>ACAAAAAAAABAAAAABAgAAAAAAAAAAAAIAAAAAAQAAAA=</HashCode>
       <FileName>Extensions\ReflectionExtension.cs</FileName>
@@ -72,7 +72,7 @@
   <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticSession" BaseTypeListCollapsed="true">
     <Position X="7.25" Y="4" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQDAIAgAgAwAApWGAAwAEAQYAAgGAAQIAEAAEkJAAQ=</HashCode>
+      <HashCode>AAQDAIAgAQAgAApWGAAyAEAQYCAAGAAQIAFAAEkJACQ=</HashCode>
       <FileName>Impl\ElasticSession.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" Collapsed="true" />
@@ -80,7 +80,7 @@
   <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticTransactionProvider" BaseTypeListCollapsed="true">
     <Position X="41.25" Y="28.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAABIAAAAQAAAAEAAAAAAAAAAAAAAAAAABEAoAQ=</HashCode>
+      <HashCode>ACAAAAAJIAAAAQAAAAEAAAAAAAAAAAAAAABAQBEAoAQ=</HashCode>
       <FileName>Impl\ElasticTransactionProvider.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
@@ -200,7 +200,7 @@
   <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataWorker" Collapsed="true">
     <Position X="1" Y="19.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AEQAAAAAAAAAAAgEIAACAAAAAIAAAAQAIAAAAAgAAAA=</HashCode>
+      <HashCode>AEQAAAAAAAAAABgEIAACAAAAAIAAAAAEIAAEAAgACAA=</HashCode>
       <FileName>Metadata\MetadataWorker.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
@@ -272,7 +272,7 @@
   <Interface Name="PersistentLayer.ElasticSearch.Metadata.IMetadataWorker" Collapsed="true">
     <Position X="4" Y="23.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AEQAAAAAAAAAAAAAIAACAAAAAIAAAAAAAAAAAAgAAAA=</HashCode>
+      <HashCode>AEQAAAAAAAAAABAAIAACAAAAAIAAAAAAAAAEAAgAAAA=</HashCode>
       <FileName>Metadata\IMetadataWorker.cs</FileName>
     </TypeIdentifier>
   </Interface>
@@ -314,7 +314,7 @@
   <Interface Name="PersistentLayer.ElasticSearch.ISession">
     <Position X="5" Y="1.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQAAIAgAgAgAAhCAAAQAEAQQAAAAAAAAAEAAEEJAAA=</HashCode>
+      <HashCode>AAQAAIAgAAAgAAhCAAAQAEAQQAAAAAAAAAEAAEEJAAA=</HashCode>
       <FileName>ISession.cs</FileName>
     </TypeIdentifier>
   </Interface>

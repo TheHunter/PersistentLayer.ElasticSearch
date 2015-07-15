@@ -453,7 +453,8 @@ namespace PersistentLayer.ElasticSearch.Cache
                     }
                     else
                     {
-                        if (metadata.PreviousStatus.Instance != null)
+                        var previousStatus = metadata.GetPreviousStatus();
+                        if (previousStatus != null)
                         {
                             request.Operations.Add(
                             new BulkUpdateOperation<object, object>(metadata.Id)
@@ -461,7 +462,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                                 Index = metadata.IndexName,
                                 Type = metadata.TypeName,
                                 Version = metadata.Version,
-                                Doc = metadata.PreviousStatus.Instance,
+                                Doc = previousStatus,
                                 RetriesOnConflict = 2
                             });
                         }

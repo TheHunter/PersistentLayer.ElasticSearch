@@ -6,6 +6,7 @@ using Nest;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
+using PersistentLayer.ElasticSearch.Metadata;
 using PersistentLayer.ElasticSearch.Proxy;
 using PersistentLayer.Exceptions;
 using PersistentLayer.Impl;
@@ -23,23 +24,25 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly ElasticSession session;
         private readonly Dictionary<TransactionOperations, List<Action>> tranActionActions;
 
-        public ElasticTransactionProvider(IElasticClient client, JsonSerializerSettings jsonSettings, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
+        public ElasticTransactionProvider(IElasticClient client, IObjectEvaluator evaluator, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
         {
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
-            this.tranActionActions = new Dictionary<TransactionOperations, List<Action>>();
-            this.tranActionActions.Add(TransactionOperations.Begin, new List<Action>());
-            this.tranActionActions.Add(TransactionOperations.Commit, new List<Action>());
-            this.tranActionActions.Add(TransactionOperations.Rollback, new List<Action>());
+            this.tranActionActions = new Dictionary<TransactionOperations, List<Action>>
+            {
+                {TransactionOperations.Begin, new List<Action>()},
+                {TransactionOperations.Commit, new List<Action>()},
+                {TransactionOperations.Rollback, new List<Action>()}
+            };
 
-            this.session = new ElasticSession(client.Infer.DefaultIndex, this, jsonSettings, mapResolver, keyResolver, adapterResolver, client);
+            this.session = new ElasticSession(client.Infer.DefaultIndex, this, evaluator, mapResolver, keyResolver, adapterResolver, client);
         }
 
         public IElasticClient Client { get; private set; }
 
         public IElasticSession Session
         {
-            get { return this.Session; }
+            get { return this.session; }
         }
 
         public bool Exists(string name)

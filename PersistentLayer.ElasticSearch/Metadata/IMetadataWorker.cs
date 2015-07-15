@@ -49,7 +49,18 @@
         /// <summary>
         /// Makes read only this instance due to the argument value.
         /// </summary>
-        /// <param name="value">if set to <c>true</c> [value].</param>
-        void AsReadOnly(bool value = true);
+        /// <param name="value">
+        /// if set to <c>true</c> [value].
+        /// </param>
+        /// <returns>
+        /// The <see cref="IMetadataWorker"/>.
+        /// </returns>
+        IMetadataWorker AsReadOnly(bool value = true);
+
+        /// <summary>
+        /// Gets the previous status.
+        /// </summary>
+        /// <returns>returns null if no previous status exists.</returns>
+        object GetPreviousStatus();
     }
 }

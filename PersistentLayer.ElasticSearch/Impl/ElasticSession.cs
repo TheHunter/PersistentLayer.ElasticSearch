@@ -17,12 +17,11 @@ using PersistentLayer.Exceptions;
 namespace PersistentLayer.ElasticSearch.Impl
 {
     public class ElasticSession
-        //: SessionCacheImpl, IElasticSession
         : IElasticSession
     {
         private const string SessionFieldName = "$idsession";
         private readonly ElasticTransactionProvider transactionProvider;
-        private readonly MetadataEvaluator evaluator;
+        private readonly IObjectEvaluator evaluator;
         private readonly MapperDescriptorResolver mapResolver;
         private readonly KeyGeneratorResolver keyStrategyResolver;
         private readonly HashSet<ElasticKeyGenerator> keyGenerators;
@@ -31,7 +30,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly DocumentAdapterResolver adapterResolver;
         private readonly HashSet<SessionCacheImpl> indexLocalCache;
 
-        public ElasticSession(string indexName, ElasticTransactionProvider transactionProvider, JsonSerializerSettings jsonSettings, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
+        public ElasticSession(string indexName, ElasticTransactionProvider transactionProvider, IObjectEvaluator evaluator, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
@@ -41,12 +40,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.Client = client;
             this.idResolver = new CustomIdResolver();
 
-            Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            this.evaluator = new MetadataEvaluator
-            {
-                Serializer = serializer,
-                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings)
-            };
+            //Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
+            //this.evaluator = new ObjectEvaluator(serializer,
+            //    (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings));
+
+            //this.evaluator = new ObjectEvaluator(jsonSettings);
+            this.evaluator = evaluator;
 
             this.keyGenerators = new HashSet<ElasticKeyGenerator>();
             this.docMappers = new HashSet<IDocumentMapper>(new DocumentMapperComparer());
@@ -115,15 +114,16 @@ namespace PersistentLayer.ElasticSearch.Impl
             var reqVerifier = this.Client.SearchAsync<TEntity>(descriptor => descriptor
                 .Index(indexName)
                 .Type(typeName)
-                .Query(q => q.Ids(new[] {idStr}))
-                .Filter(fd => fd
-                    .Or(fd1 => fd1.Missing(SessionFieldName),
-                        fd2 => fd2.And(
-                            fd22 => fd22.Exists(SessionFieldName),
-                            fd23 => fd23.Term(SessionFieldName, this.Id)
-                        )
-                    )
-                )
+                .Query(q => q.Ids(new[] { idStr }))
+                .ApplySessionFilter(SessionFieldName, this.Id)
+                ////.Filter(fd => fd
+                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
+                ////        fd2 => fd2.And(
+                ////            fd22 => fd22.Exists(SessionFieldName),
+                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
+                ////        )
+                ////    )
+                ////)
                 );
 
             var firstRequest = request.Result;
@@ -133,7 +133,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return null;
 
             if (this.TranInProgress)
-                this.GetCache(indexName).Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.GetCache(indexName).Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
 
             return firstRequest.Source;
         }
@@ -162,20 +162,21 @@ namespace PersistentLayer.ElasticSearch.Impl
             var response = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(indexName)
                 .Type(typeName)
-                .Query(queryDescriptor => queryDescriptor.Ids(ids.Select(n => n.ToString()).ToArray()))
-                .Filter(fd => fd
-                    .Or(fd1 => fd1.Missing(SessionFieldName),
-                        fd2 => fd2.And(
-                            fd22 => fd22.Exists(SessionFieldName),
-                            fd23 => fd23.Term(SessionFieldName, this.Id)
-                        )
-                    )
-                )
+                .Query(queryDescriptor => queryDescriptor.Ids(idsToHit.ToArray()))
+                .ApplySessionFilter(SessionFieldName, this.Id)
+                ////.Filter(fd => fd
+                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
+                ////        fd2 => fd2.And(
+                ////            fd22 => fd22.Exists(SessionFieldName),
+                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
+                ////        )
+                ////    )
+                ////)
                 );
 
             foreach (var hit in response.Hits)
             {
-                this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
+                this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
                 list.Add(hit.Source);
             }
 
@@ -191,14 +192,15 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .From(0)
                 .Take(20)
                 .Version()
-                .Filter(fd => fd
-                    .Or(fd1 => fd1.Missing(SessionFieldName),
-                        fd2 => fd2.And(
-                            fd22 => fd22.Exists(SessionFieldName),
-                            fd23 => fd23.Term(SessionFieldName, this.Id)
-                        )
-                    )
-                )
+                .ApplySessionFilter(SessionFieldName, this.Id)
+                ////.Filter(fd => fd
+                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
+                ////        fd2 => fd2.And(
+                ////            fd22 => fd22.Exists(SessionFieldName),
+                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
+                ////        )
+                ////    )
+                ////)
                 );
 
             var docs = new List<TEntity>();
@@ -209,7 +211,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (metadata == null)
                 {
                     docs.Add(hit.Source);
-                    this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage));
+                    this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
                 }
                 else
                 {
@@ -307,7 +309,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                            this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                            this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity, readOnly: !this.TranInProgress));
 
                             return entity;
                         }
@@ -368,7 +370,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Found)
                     throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
-                this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version));
+                this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version, readOnly: !this.TranInProgress));
             }
         }
 
@@ -417,7 +419,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity));
+                this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity, readOnly: !this.TranInProgress));
             }
             
             return entity;
@@ -470,7 +472,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 return response.Source;
 
             var metadata = this.GetCache(indexName).SingleOrDefault(id, typeName);
-            var res = response.AsMetadata(this.evaluator, OriginContext.Storage);
+            var res = response.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress);
 
             if (metadata == null)
             {
@@ -696,7 +698,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                     }
                     else
                     {
-                        if (metadata.PreviousStatus.Instance != null)
+                        var previousStatus = metadata.GetPreviousStatus();
+                        if (previousStatus != null)
                         {
                             request.Operations.Add(
                             new BulkUpdateOperation<object, object>(metadata.Id)
@@ -704,7 +707,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                                 Index = metadata.IndexName,
                                 Type = metadata.TypeName,
                                 Version = metadata.Version,
-                                Doc = metadata.PreviousStatus.Instance,
+                                Doc = previousStatus,
                                 RetriesOnConflict = 2
                             });
                         }

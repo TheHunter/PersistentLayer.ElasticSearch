@@ -61,6 +61,7 @@
     <Compile Include="Extensions\QueryDescriptorExtension.cs" />
     <Compile Include="Extensions\ReflectionExtension.cs" />
     <Compile Include="IComponentResolver.cs" />
+    <Compile Include="IElasticRootPersisterDAO.cs" />
     <Compile Include="IElasticRootPagedDAO.cs">
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
@@ -89,12 +90,13 @@
     <Compile Include="Mapping\MapperDescriptor.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Metadata\IObjectEvaluator.cs" />
     <Compile Include="Metadata\IMetadataInfo.cs" />
     <Compile Include="Cache\IMetadataCache.cs" />
     <Compile Include="Metadata\IndexMetadataComparer.cs" />
     <Compile Include="Metadata\MetadataInfo.cs" />
     <Compile Include="Cache\MetadataCache.cs" />
-    <Compile Include="Metadata\MetadataEvaluator.cs" />
+    <Compile Include="Metadata\ObjectEvaluator.cs" />
     <Compile Include="Exceptions\BulkOperationException.cs" />
     <Compile Include="Exceptions\DuplicatedInstanceException.cs" />
     <Compile Include="Extensions\MetadataExtension.cs" />

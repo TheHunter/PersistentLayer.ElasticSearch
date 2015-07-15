@@ -65,21 +65,15 @@ namespace PersistentLayer.ElasticSearch.Test
                 {
                     var jsonSettings = this.MakeJsonSettings(this.MakeSettings("current"));
                     jsonSettings.NullValueHandling = NullValueHandling.Include;
-
-                    Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-                    return new MetadataEvaluator
-                    {
-                        Serializer = serializer,
-                        Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings)
-                    };
+                    return new ObjectEvaluator(jsonSettings);
                 })
-            .AsSelf();
+            .As<IObjectEvaluator>();
 
             builder.Register(context => MakeModelBuilder())
                 .AsSelf()
                 .SingleInstance();
 
-            builder.Register(context => new DocumentAdapterResolver(context.Resolve<ModuleBuilder>(), context.Resolve<MetadataEvaluator>().Merge, typeBuilder => typeBuilder.AddProperty<string>("$idsession")))
+            builder.Register(context => new DocumentAdapterResolver(context.Resolve<ModuleBuilder>(), context.Resolve<IObjectEvaluator>().Merge, typeBuilder => typeBuilder.AddProperty<string>("$idsession")))
                 .AsSelf()
                 .SingleInstance();
 
@@ -106,7 +100,7 @@ namespace PersistentLayer.ElasticSearch.Test
         protected IElasticTransactionProvider GetProvider(string defaultIndex)
         {
             return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex),
-                this.MakeJsonSettings(defaultIndex),
+                this.container.Resolve<IObjectEvaluator>(),
                 this.container.Resolve<KeyGeneratorResolver>(),
                 this.container.Resolve<MapperDescriptorResolver>(),
                 this.container.Resolve<DocumentAdapterResolver>()

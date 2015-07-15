@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Autofac.Features.Metadata;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Metadata;
@@ -33,15 +34,13 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
         [Fact]
         public void CompareMetadataForCache()
         {
-            var jsonSettings = this.MakeJsonSettings(this.MakeSettings("current"));
-            jsonSettings.NullValueHandling = NullValueHandling.Include;
+            /*
+            verificare questo metodo perché non supera il test
+             * occorre verificare se la logica di questo test sia anche corretta,
+             * questo perché se un metadato fosse in modalità readonly, probabilmente non dovrebbe essere aggiornabile.
+            */
 
-            Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            var evaluator = new MetadataEvaluator
-            {
-                Serializer = serializer,
-                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest)
-            };
+            var evaluator = this.MakeEvaluator("current");
 
             var metadata1 = new MetadataWorker("1", "current", "mytype",
                 new Person(1) { Name = "myname" },
@@ -71,13 +70,7 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
         [Fact]
         public void MetadataCacheTest()
         {
-            var jsonSettings = this.MakeJsonSettings(this.MakeSettings("current"));
-            Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            var evaluator = new MetadataEvaluator
-            {
-                Serializer = serializer,
-                Merge = (source, dest) => JsonConvert.PopulateObject(serializer(source), dest)
-            };
+            var evaluator = this.MakeEvaluator("current");
 
             var comparer = new IndexMetadataComparer();
             var metadata1 = new MetadataWorker("1", "current", "mytype", new object(), evaluator, OriginContext.Newone, 1.ToString(CultureInfo.InvariantCulture));
@@ -102,22 +95,33 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
             Assert.Equal(2, count2);
         }
 
-        //[Fact]
-        //public void StackTest()
-        //{
-        //    var stack = new Stack<string>();
-        //    stack.Push("first");
-        //    stack.Push("second");
-        //    stack.Push("thirth");
+        [Fact]
+        public void TestOnChangeMetadata()
+        {
 
-        //    var res = stack.Pop();
-        //    res = stack.Pop();
-        //    res = stack.Pop();
+            var evaluator = this.MakeEvaluator("current");
+            var doc1 = new Student(1) { Code = 123 };
+            ////var doc2 = new Student(1) { Code = 123 };
+            var metadata1 = new MetadataWorker("1", "current_test", "mytype", doc1, evaluator, OriginContext.Storage, 1.ToString(CultureInfo.InvariantCulture));
 
-        //    res = stack.Pop();
-        //    res = stack.Pop();
-        //    Assert.Null(res);
+            Assert.False(metadata1.HasChanged());
+            Assert.Equal(metadata1.Origin, OriginContext.Storage);
+            Assert.Null(metadata1.PreviousStatus);
 
-        //}
+            doc1.Cf = "sdngkjsdgfkjd";
+            Assert.False(metadata1.HasChanged());
+            Assert.Null(metadata1.PreviousStatus);
+
+            metadata1.AsReadOnly(false);
+            Assert.False(metadata1.HasChanged());
+
+        }
+
+        private IObjectEvaluator MakeEvaluator(string index)
+        {
+            var jsonSettings = this.MakeJsonSettings(this.MakeSettings(index));
+            jsonSettings.NullValueHandling = NullValueHandling.Include;
+            return new ObjectEvaluator(jsonSettings);
+        }
     }
 }
