@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Nest;
-using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.KeyGeneration;
 using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.ElasticSearch.Metadata;

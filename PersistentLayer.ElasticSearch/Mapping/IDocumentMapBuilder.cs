@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace PersistentLayer.ElasticSearch.Mapping
 {
@@ -16,7 +13,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
         /// <value>
         /// The type of the documen.
         /// </value>
-        Type DocumenType { get; }
+        Type DocumentType { get; }
 
         /// <summary>
         /// Builds the specified key gen type.

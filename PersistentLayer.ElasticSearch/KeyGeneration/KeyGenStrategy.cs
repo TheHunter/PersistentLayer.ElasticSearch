@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
-using PersistentLayer.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.KeyGeneration
 {
@@ -41,5 +36,4 @@ namespace PersistentLayer.ElasticSearch.KeyGeneration
             return new KeyGenStrategy(typeof(TId), lastKey => nextFunc.Invoke(lastKey));
         }
     }
-
 }

@@ -8,7 +8,7 @@ namespace PersistentLayer.ElasticSearch
     /// <typeparam name="TRootEntity">The type of the root entity.</typeparam>
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     public interface IElasticRootPagedDAO<in TRootEntity, TEntity>
-        : IRootPagedDAO<TRootEntity, TEntity>, IDisposable
+        : IRootPagedDAO<TRootEntity, TEntity>, IElasticRootPersisterDAO<TRootEntity, TEntity>, IElasticRootQueryableDAO<TRootEntity, TEntity>
         where TRootEntity : class
         where TEntity : class, TRootEntity
     {
@@ -19,7 +19,7 @@ namespace PersistentLayer.ElasticSearch
     /// </summary>
     /// <typeparam name="TRootEntity">The type of the root entity.</typeparam>
     public interface IElasticRootPagedDAO<in TRootEntity>
-        : IRootPagedDAO<TRootEntity>, IDisposable
+        : IRootPagedDAO<TRootEntity>, IElasticRootPersisterDAO<TRootEntity>, IElasticRootQueryableDAO<TRootEntity>
         where TRootEntity : class
     {
     }

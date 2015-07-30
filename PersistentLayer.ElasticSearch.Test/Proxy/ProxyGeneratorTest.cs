@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
-using PersistentLayer.ElasticSearch.Extensions;
 using PersistentLayer.ElasticSearch.Proxy;
 using PersistentLayer.ElasticSearch.Test.Documents;
 using Xunit;
@@ -51,14 +45,14 @@ namespace PersistentLayer.ElasticSearch.Test.Proxy
             dynamic instance = Activator.CreateInstance(derivedType);
             Assert.NotNull(instance);
 
-            //Assert.Null(property.GetValue(instance));
+            ////Assert.Null(property.GetValue(instance));
 
-            //property.SetValue(instance, "my_value", null);
+            ////property.SetValue(instance, "my_value", null);
 
-            instance.MyCustomProperty = "cioa....";
+            instance.MyCustomProperty = "ciao....";
             
             Assert.NotNull(property.GetValue(instance));
-            //Assert.Equal("my_value", property.GetValue(instance));
+            ////Assert.Equal("my_value", property.GetValue(instance));
         }
 
         [Fact]

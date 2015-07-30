@@ -78,7 +78,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             PropertyInfo propertyCaseInsensitive3 = this.GetPropertyCaseInsensitive(type, type.Name + "_" + propertyName);
             if (propertyCaseInsensitive3 != null)
                 return propertyCaseInsensitive3;
-            return propertyCaseInsensitive3;
+            return null;
         }
 
         /// <summary>

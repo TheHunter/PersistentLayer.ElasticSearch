@@ -1,7 +1,7 @@
 ﻿namespace PersistentLayer.ElasticSearch.Metadata
 {
     /// <summary>
-    /// Metadta evaluator for comparing / merging metadata.
+    /// Metadata evaluator for comparing / merging metadata.
     /// </summary>
     public interface IObjectEvaluator
     {

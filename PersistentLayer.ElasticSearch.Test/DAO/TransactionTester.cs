@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PersistentLayer.Exceptions;
+﻿using PersistentLayer.Exceptions;
 using Xunit;
 
 namespace PersistentLayer.ElasticSearch.Test.DAO
@@ -20,10 +15,10 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
                 var tranProvider = dao.GetTransactionProvider();
 
                 tranProvider.BeginTransaction("first");
-                // one transaction is in progress..
+                //// one transaction is in progress..
                 Assert.True(tranProvider.InProgress);
 
-                // no transaction in progress...
+                //// no transaction in progress...
                 tranProvider.RollbackTransaction();
 
                 tranProvider.BeginTransaction("first");
@@ -31,13 +26,13 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
                 tranProvider.BeginTransaction("3");
 
                 tranProvider.CommitTransaction();
-                // one transaction is in progress..
+                //// one transaction is in progress..
                 Assert.True(tranProvider.InProgress);
                 tranProvider.CommitTransaction();
-                // one transaction is in progress..
+                //// one transaction is in progress..
                 Assert.True(tranProvider.InProgress);
                 tranProvider.CommitTransaction();
-                // one transaction is in progress..
+                //// one transaction is in progress..
                 Assert.False(tranProvider.InProgress);
             }
         }
@@ -57,7 +52,5 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
                 tranProvider.RollbackTransaction();
             }
         }
-
-
     }
 }

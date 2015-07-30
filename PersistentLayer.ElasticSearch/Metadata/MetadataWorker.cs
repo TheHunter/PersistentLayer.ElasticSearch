@@ -52,7 +52,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.emptyReference = Activator.CreateInstance(this.InstanceType, true);
 
             if (!readOnly)
-                this.SetPreviousStatus(this.CloneInstance());
+                this.SetPreviousStatus(this.evaluator.Clone(this.Instance));
         }
 
         /// <summary>
@@ -105,13 +105,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.SetPreviousStatus(originalStatus);
         }
 
-        private object CloneInstance()
-        {
-            var previousStatus = Activator.CreateInstance(this.InstanceType, true);
-            this.evaluator.Merge(this.Instance, previousStatus);
-            return previousStatus;
-        }
-
         /// <summary>
         /// Called when [initialize].
         /// </summary>
@@ -123,7 +116,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </exception>
         private void SetPreviousStatus(object previousStatus = null)
         {
-            previousStatus = previousStatus ?? this.CloneInstance();
+            previousStatus = previousStatus ?? this.evaluator.Clone(this.Instance);
             this.PreviousStatus = new MetadataInfo(this.Id, this.IndexName, this.TypeName, previousStatus, this.Version);
         }
 
@@ -163,26 +156,33 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// Updates the specified metadata.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
-        public void Update(IMetadataWorker metadata)
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException">Metadata used for update must be referenced.</exception>
+        public bool Update(IMetadataWorker metadata)
         {
             if (metadata == null)
                 throw new InvalidOperationException("Metadata used for update must be referenced.");
+
+            if (this.readOnly)
+                return false;
 
             this.SetPreviousStatus();
             this.UpdateInstance(metadata.Instance);
             this.Id = metadata.Id;
             this.Version = metadata.Version;
             this.Origin = metadata.Origin;
+            return true;
         }
 
         /// <summary>
-        /// Restores the specified version.
+        /// Restores this instance with the specified version.
         /// </summary>
         /// <param name="version">The version.</param>
-        public void Restore(string version = null)
+        /// <returns>returns true if this instance has a previous status and this is not readonly.</returns>
+        public bool Restore(string version = null)
         {
-            if (this.PreviousStatus == null)
-                return;
+            if (this.PreviousStatus == null || this.readOnly)
+                return false;
 
             var prev = this.PreviousStatus;
             this.PreviousStatus = null;
@@ -190,6 +190,8 @@ namespace PersistentLayer.ElasticSearch.Metadata
 
             if (version != null)
                 this.Version = version;
+
+            return true;
         }
 
         /// <summary>
@@ -231,9 +233,6 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.readOnly = value;
             if (!value)
             {
-                //var originalStatus = Activator.CreateInstance(this.InstanceType, true);
-                //this.evaluator.Merge(this.Instance, originalStatus);
-                //this.PreviousStatus = new MetadataInfo(this.Id, this.IndexName, this.TypeName, originalStatus, this.Version);
                 this.PreviousStatus = new MetadataInfo(this.Id, this.IndexName, this.TypeName, this.evaluator.Clone(this.Instance), this.Version);
             }
             return this;

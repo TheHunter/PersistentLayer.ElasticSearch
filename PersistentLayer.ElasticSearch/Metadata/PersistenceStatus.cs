@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace PersistentLayer.ElasticSearch.Metadata
+﻿namespace PersistentLayer.ElasticSearch.Metadata
 {
     /// <summary>
     /// Status related about an instance present into session context.

@@ -19,7 +19,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         public MapperDescriptorResolver Register(IDocumentMapBuilder mapConfiguration)
         {
-            if (this.mappers.All(builder => builder.DocumenType != mapConfiguration.DocumenType))
+            if (this.mappers.All(builder => builder.DocumentType != mapConfiguration.DocumentType))
                 this.mappers.Add(mapConfiguration);
             
             return this;
@@ -32,7 +32,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
 
         public IDocumentMapBuilder Resolve(Type keyType)
         {
-            return this.mappers.FirstOrDefault(mapper => mapper.DocumenType == keyType);
+            return this.mappers.FirstOrDefault(mapper => mapper.DocumentType == keyType);
         }
     }
 }

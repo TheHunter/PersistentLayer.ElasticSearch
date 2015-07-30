@@ -80,6 +80,11 @@ namespace PersistentLayer.ElasticSearch.Extensions
             return setter;
         }
 
+        /// <summary>
+        /// Gets the default value.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
         public static object GetDefaultValue(this Type type)
         {
             if (type.Name.StartsWith("Nullable") && type.IsGenericType)
@@ -89,6 +94,12 @@ namespace PersistentLayer.ElasticSearch.Extensions
             return ret;
         }
 
+        /// <summary>
+        /// Indicates if the given type implements the specified interface types.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="interfaceTypes">The interface types.</param>
+        /// <returns></returns>
         public static bool Implements(this Type type, params Type[] interfaceTypes)
         {
             var interfaces = type.GetInterfaces();

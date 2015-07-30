@@ -56,7 +56,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             return this;
         }
 
-        Type IDocumentMapBuilder.DocumenType
+        Type IDocumentMapBuilder.DocumentType
         {
             get { return this.docType; }
         }

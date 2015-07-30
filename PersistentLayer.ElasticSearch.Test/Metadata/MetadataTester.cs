@@ -1,8 +1,6 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Linq;
 using System.Text;
-using Autofac.Features.Metadata;
 using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Metadata;
@@ -34,19 +32,13 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
         [Fact]
         public void CompareMetadataForCache()
         {
-            /*
-            verificare questo metodo perché non supera il test
-             * occorre verificare se la logica di questo test sia anche corretta,
-             * questo perché se un metadato fosse in modalità readonly, probabilmente non dovrebbe essere aggiornabile.
-            */
-
             var evaluator = this.MakeEvaluator("current");
 
             var metadata1 = new MetadataWorker("1", "current", "mytype",
                 new Person(1) { Name = "myname" },
                 evaluator,
                 OriginContext.Newone,
-                1.ToString(CultureInfo.InvariantCulture));
+                "1", false);
 
             var metadata2 = new MetadataWorker("1", "current", "mytype",
                 new Person(1) { Surname = "mysurname_updated" },
@@ -65,6 +57,29 @@ namespace PersistentLayer.ElasticSearch.Test.Metadata
             metadata1.Restore();
             Assert.Equal("myname", doc.Name);
             Assert.Equal(null, doc.Surname);
+        }
+
+        [Fact]
+        public void CompareReadableMetadata()
+        {
+            var evaluator = this.MakeEvaluator("current");
+
+            var metadata1 = new MetadataWorker("1", "current", "mytype",
+                new Person(1) { Name = "myname" },
+                evaluator,
+                OriginContext.Newone,
+                "1");
+
+            var metadata2 = new MetadataWorker("1", "current", "mytype",
+                new Person(1) { Surname = "mysurname_updated" },
+                evaluator,
+                OriginContext.Newone,
+                2.ToString(CultureInfo.InvariantCulture));
+
+            Assert.False(metadata1.Update(metadata2));
+            metadata1.AsReadOnly(false);
+
+            Assert.True(metadata1.Update(metadata2));
         }
 
         [Fact]

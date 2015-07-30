@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace PersistentLayer.ElasticSearch.Mapping
+﻿namespace PersistentLayer.ElasticSearch.Mapping
 {
     /// <summary>
     /// Indicates the key generation strategy for documents.

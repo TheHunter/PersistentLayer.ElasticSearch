@@ -42,7 +42,7 @@
   <Class Name="PersistentLayer.ElasticSearch.Extensions.QueryDescriptorExtension">
     <Position X="12.75" Y="4" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAEAAAAAAAAAA=</HashCode>
+      <HashCode>AAAAAAQAAAAAAAAAAAIAAAAAAAAAAAAAEAAAAAAAAAA=</HashCode>
       <FileName>Extensions\QueryDescriptorExtension.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -75,7 +75,7 @@
       <HashCode>AAQDAIAgAQAgAApWGAAyAEAQYCAAGAAQIAFAAEkJACQ=</HashCode>
       <FileName>Impl\ElasticSession.cs</FileName>
     </TypeIdentifier>
-    <Lollipop Position="0.2" Collapsed="true" />
+    <Lollipop Position="0.2" />
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticTransactionProvider" BaseTypeListCollapsed="true">
     <Position X="41.25" Y="28.25" Width="1.5" />
@@ -181,13 +181,6 @@
       <FileName>Metadata\MetadataComparer.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
-  </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataEvaluator" Collapsed="true">
-    <Position X="7" Y="18.5" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAACAAAAAAAAAAAAAAAQAAAAAAAAAAAAA=</HashCode>
-      <FileName>Metadata\MetadataEvaluator.cs</FileName>
-    </TypeIdentifier>
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Metadata.MetadataInfo" Collapsed="true">
     <Position X="1" Y="18.5" Width="1.5" />

@@ -43,8 +43,7 @@ namespace PersistentLayer.ElasticSearch.Test
                     .Register(KeyGenStrategy.Of<long>(i => ++i))
                     .Register(KeyGenStrategy.Of<double>(i => i + 1))
                     .Register(KeyGenStrategy.Of<int?>(i => ++i))
-                    )
-                ;
+                );
 
             builder.Register(context => new ElasticInferrer(context.Resolve<Func<string, ConnectionSettings>>().Invoke("current")))
                 .AsSelf();

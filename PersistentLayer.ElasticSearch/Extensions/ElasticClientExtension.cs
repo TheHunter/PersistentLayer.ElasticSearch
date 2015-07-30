@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Nest;
 using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.Exceptions;

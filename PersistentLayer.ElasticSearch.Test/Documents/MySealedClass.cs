@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PersistentLayer.ElasticSearch.Test.Documents
+﻿namespace PersistentLayer.ElasticSearch.Test.Documents
 {
     public sealed class MySealedClass
         : Student
@@ -14,7 +8,7 @@ namespace PersistentLayer.ElasticSearch.Test.Documents
         }
 
         public MySealedClass(int id)
-            :base(id)
+            : base(id)
         {
         }
 

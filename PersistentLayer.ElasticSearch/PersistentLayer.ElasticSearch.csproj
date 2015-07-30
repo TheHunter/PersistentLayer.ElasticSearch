@@ -65,6 +65,7 @@
     <Compile Include="IElasticRootPagedDAO.cs">
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
+    <Compile Include="IElasticRootQueryableDAO.cs" />
     <Compile Include="IElasticTransactionProvider.cs" />
     <Compile Include="Impl\ElasticSession.cs">
       <SubType>Code</SubType>

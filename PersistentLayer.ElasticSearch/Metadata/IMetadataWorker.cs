@@ -32,13 +32,15 @@
         /// Updates the specified metadata.
         /// </summary>
         /// <param name="metadata">The metadata.</param>
-        void Update(IMetadataWorker metadata);
+        /// <returns></returns>
+        bool Update(IMetadataWorker metadata);
 
         /// <summary>
-        /// Restores the specified version.
+        /// Restores this instance with the specified version.
         /// </summary>
         /// <param name="version">The version.</param>
-        void Restore(string version = null);
+        /// <returns></returns>
+        bool Restore(string version = null);
 
         /// <summary>
         /// Becomes the metadata persistent.

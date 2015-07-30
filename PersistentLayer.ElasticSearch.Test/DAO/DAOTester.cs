@@ -7,12 +7,6 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
     public class DAOTester
         : BasicElasticConfig
     {
-        public DAOTester()
-        {
-            //var client = this.MakeElasticClient("current");
-            //client.DeleteIndex(descriptor => descriptor.Index("current"));
-        }
-
         [Theory]
         [InlineData("current")]
         public void FindByTest(string defaultIndex)
@@ -33,7 +27,7 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
 
             using (var dao = this.MakePagedDao(defaultIndex))
             {
-                var instance = new Person { Name = "Ton", Surname = "Jones", Cf = "mycf"};
+                var instance = new Person { Name = "Ton", Surname = "Jones", Cf = "mycf" };
                 dao.MakePersistent(instance);
                 
                 var res = dao.FindBy<Person>(1);

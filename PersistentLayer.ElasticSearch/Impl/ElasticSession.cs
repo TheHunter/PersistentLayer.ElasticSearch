@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using Nest;
-using Newtonsoft.Json;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Exceptions;
 using PersistentLayer.ElasticSearch.Extensions;
@@ -39,12 +38,6 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.keyStrategyResolver = keyStrategyResolver;
             this.Client = client;
             this.idResolver = new CustomIdResolver();
-
-            //Func<object, string> serializer = instance => JsonConvert.SerializeObject(instance, Formatting.None, jsonSettings);
-            //this.evaluator = new ObjectEvaluator(serializer,
-            //    (source, dest) => JsonConvert.PopulateObject(serializer(source), dest, jsonSettings));
-
-            //this.evaluator = new ObjectEvaluator(jsonSettings);
             this.evaluator = evaluator;
 
             this.keyGenerators = new HashSet<ElasticKeyGenerator>();
@@ -111,10 +104,11 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .EnableSource()
                 );
 
+            var ids = new[] { idStr };
             var reqVerifier = this.Client.SearchAsync<TEntity>(descriptor => descriptor
                 .Index(indexName)
                 .Type(typeName)
-                .Query(q => q.Ids(new[] { idStr }))
+                .Query(q => q.Ids(ids))
                 .ApplySessionFilter(SessionFieldName, this.Id)
                 ////.Filter(fd => fd
                 ////    .Or(fd1 => fd1.Missing(SessionFieldName),
@@ -657,10 +651,10 @@ namespace PersistentLayer.ElasticSearch.Impl
                     {
                         metadata.BecomePersistent(respo.Version);
                     }
-                    else
-                    {
-                        // It's needed to write this error into a log file...
-                    }
+                    ////else
+                    ////{
+                    ////    // It's needed to write this error into a log file...
+                    ////}
                 }
                 else
                 {
@@ -711,9 +705,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                                 RetriesOnConflict = 2
                             });
                         }
-
-                        // if (response.IsValid)
-                        //    metadata.Restore(item.Version);
                     }
                 }
             }
