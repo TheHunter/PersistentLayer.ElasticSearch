@@ -110,14 +110,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .Type(typeName)
                 .Query(q => q.Ids(ids))
                 .ApplySessionFilter(SessionFieldName, this.Id)
-                ////.Filter(fd => fd
-                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
-                ////        fd2 => fd2.And(
-                ////            fd22 => fd22.Exists(SessionFieldName),
-                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
-                ////        )
-                ////    )
-                ////)
                 );
 
             var firstRequest = request.Result;
@@ -158,14 +150,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .Type(typeName)
                 .Query(queryDescriptor => queryDescriptor.Ids(idsToHit.ToArray()))
                 .ApplySessionFilter(SessionFieldName, this.Id)
-                ////.Filter(fd => fd
-                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
-                ////        fd2 => fd2.And(
-                ////            fd22 => fd22.Exists(SessionFieldName),
-                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
-                ////        )
-                ////    )
-                ////)
                 );
 
             foreach (var hit in response.Hits)
@@ -187,14 +171,6 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .Take(20)
                 .Version()
                 .ApplySessionFilter(SessionFieldName, this.Id)
-                ////.Filter(fd => fd
-                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
-                ////        fd2 => fd2.And(
-                ////            fd22 => fd22.Exists(SessionFieldName),
-                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
-                ////        )
-                ////    )
-                ////)
                 );
 
             var docs = new List<TEntity>();
@@ -496,6 +472,15 @@ namespace PersistentLayer.ElasticSearch.Impl
             throw new NotImplementedException();
         }
 
+        public TValue GetIdentifier<TEntity, TValue>(TEntity instance, string index = null)
+            where TEntity : class
+        {
+            var indexName = index ?? this.Index;
+            var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+
+            return docMapper.Id != null ? docMapper.Id.GetValue<TValue>(instance) : default(TValue);
+        }
+
         public bool Cached<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
@@ -745,7 +730,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (mapperDescriptor == null)
             {
                 var property = this.idResolver.GetPropertyInfo(docType) ?? this.Client.GetIdPropertyInfoOf<TEntity>(index);
-                
+
                 current = new DocumentMapper(docType)
                 {
                     DocumentType = docType,

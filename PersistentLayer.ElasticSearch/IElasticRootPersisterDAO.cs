@@ -10,7 +10,9 @@
         where TRootEntity : class
         where TEntity : class, TRootEntity
     {
+        void Evict(TEntity entity, string index = null);
 
+        void Flush();
     }
 
     /// <summary>
@@ -21,6 +23,8 @@
         : IRootPersisterDAO<TRootEntity>
         where TRootEntity : class
     {
+        void Evict<TEntity>(TEntity entity, string index = null) where TEntity : class, TRootEntity;
 
+        void Flush();
     }
 }

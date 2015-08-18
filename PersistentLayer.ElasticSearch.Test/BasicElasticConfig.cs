@@ -54,9 +54,11 @@ namespace PersistentLayer.ElasticSearch.Test
                 .OnActivated(delegate(IActivatedEventArgs<MapperDescriptorResolver> args)
                 {
                     var instance = args.Instance;
+                    var inferrer = args.Context.Resolve<ElasticInferrer>();
                     instance.Register(
-                        (new MapperDescriptor<Person>(args.Context.Resolve<ElasticInferrer>()))
+                        new MapperDescriptor<Person>(inferrer)
                             .SurrogateKey(person => person.Cf)
+                            .SetProperty(mapper => mapper.Version = mapper.MakeElasticProperty(person => person.Version))
                         );
                 });
 

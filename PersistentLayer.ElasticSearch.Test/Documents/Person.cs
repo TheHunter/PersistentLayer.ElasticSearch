@@ -1,4 +1,5 @@
-﻿namespace PersistentLayer.ElasticSearch.Test.Documents
+﻿
+namespace PersistentLayer.ElasticSearch.Test.Documents
 {
     public class Person
     {
@@ -15,5 +16,7 @@
         public string Name { get; set; }
         public string Surname { get; set; }
         public string Cf { get; set; }
+
+        public long Version { get; set; }
     }
 }

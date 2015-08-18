@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Nest;
+using PersistentLayer.ElasticSearch.Mapping;
 
 namespace PersistentLayer.ElasticSearch.Extensions
 {
@@ -52,6 +54,15 @@ namespace PersistentLayer.ElasticSearch.Extensions
             }
 
             return property;
+        }
+
+        public static ElasticProperty AsElasticProperty<TInstance>(this Expression<Func<TInstance, object>> docExpression, ElasticInferrer inferrer)
+        {
+            var property = docExpression.AsPropertyInfo();
+
+            return new ElasticProperty(property,
+                inferrer.PropertyName(property),
+                instance => docExpression.Compile().Invoke(instance as dynamic));
         }
 
         /// <summary>

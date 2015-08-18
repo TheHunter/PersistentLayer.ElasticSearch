@@ -64,6 +64,9 @@ namespace PersistentLayer.ElasticSearch
         TEntity UniqueResult<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)
             where TEntity : class;
 
+        TValue GetIdentifier<TEntity, TValue>(TEntity instance, string index = null)
+            where TEntity : class;
+
         bool Cached<TEntity>(string index = null, params object[] ids)
             where TEntity : class;
 

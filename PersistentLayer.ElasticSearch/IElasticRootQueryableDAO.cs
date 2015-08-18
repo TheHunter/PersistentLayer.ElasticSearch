@@ -1,30 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace PersistentLayer.ElasticSearch
+﻿namespace PersistentLayer.ElasticSearch
 {
-    public interface IElasticRootQueryableDAO<in TRootEntity, in TEntity>
-        : IDisposable
+    public interface IElasticRootQueryableDAO<in TRootEntity, TEntity>
+        : IRootQueryableDAO<TRootEntity, TEntity>
         where TRootEntity : class
         where TEntity : class, TRootEntity
     {
-        ////bool SessionWithChanges();
+        TKey GetIdentifier<TKey>(TEntity instance, string index = null);
 
-        ////bool IsCached(TEntity instance, string index = null);
+        bool IsCached(TEntity instance, string index = null);
 
-        ////bool IsDirty(TEntity instance, string index = null);
+        bool IsDirty(TEntity instance);
+
+        TEntity Load(object identifier, string index = null);
+
+        bool SessionWithChanges();
     }
 
+
     public interface IElasticRootQueryableDAO<in TRootEntity>
-        : IDisposable
+        : IRootQueryableDAO<TRootEntity>
         where TRootEntity : class
     {
-        ////bool SessionWithChanges();
+        TKey GetIdentifier<TEntity, TKey>(TEntity instance, string index = null)
+            where TEntity : class;
 
-        ////bool IsCached<TEntity>(TEntity instance, string index = null) where TEntity : class, TRootEntity;
+        bool IsCached<TEntity>(TEntity instance, string index = null)
+            where TEntity : class, TRootEntity;
 
-        ////bool IsDirty<TEntity>(TEntity instance, string index = null) where TEntity : class, TRootEntity;
+        bool IsDirty<TEntity>(TEntity instance)
+            where TEntity : class, TRootEntity;
+
+        TEntity Load<TEntity>(object identifier, string index = null)
+            where TEntity : class, TRootEntity;
+
+        bool SessionWithChanges();
     }
 }

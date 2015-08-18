@@ -108,7 +108,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Impossible to assing the given value because It's not compatible.", ex);
+                throw new InvalidOperationException("Impossible to assign the given value because It's not compatible.", ex);
             }
 
         }

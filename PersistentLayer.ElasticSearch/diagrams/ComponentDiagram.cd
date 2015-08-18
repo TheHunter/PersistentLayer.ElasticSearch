@@ -54,17 +54,17 @@
     </TypeIdentifier>
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticRootPagedDAO&lt;TRootEntity&gt;" BaseTypeListCollapsed="true">
-    <Position X="30" Y="28.25" Width="1.5" />
+    <Position X="30" Y="37.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAQAACAgAQgCAAAQAAAQAAAAIAAAAAEAAAEBAAA=</HashCode>
+      <HashCode>AAAAAAQEACAgAQgCAAAQAAAQAAAAIAAAAAEAAAEBAAA=</HashCode>
       <FileName>Impl\ElasticRootPagedDAO.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Impl.ElasticRootPagedDAO&lt;TRootEntity, TEntity&gt;" BaseTypeListCollapsed="true">
-    <Position X="34.75" Y="28.25" Width="1.5" />
+    <Position X="34.75" Y="37.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAQAACAgAQgCAAAQAAAQAAAAIAAAAAEAAAEBAAA=</HashCode>
+      <HashCode>AAAAAAQEACAgAQgCAAAQAAAQAAAAIAAAAAEAAAEBAAA=</HashCode>
       <FileName>Impl\ElasticRootPagedDAO.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
@@ -92,7 +92,7 @@
       <FileName>KeyGeneration\ElasticKeyGenerator.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.KeyGeneration.KeyGeneratorResolver" Collapsed="true" BaseTypeListCollapsed="true">
+  <Class Name="PersistentLayer.ElasticSearch.KeyGeneration.KeyGeneratorResolver" BaseTypeListCollapsed="true">
     <Position X="13.5" Y="15.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAACAAAAACAAAAAAAAAABAAAAAAAAAAAAAAA=</HashCode>
@@ -115,7 +115,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Mapping.DocumentMapper" BaseTypeListCollapsed="true">
-    <Position X="23.25" Y="22.75" Width="1.5" />
+    <Position X="23.25" Y="23.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAACAAAABAAAAAAAAAgAAAAAAAAAABAQACAAAAAAAAA=</HashCode>
       <FileName>Mapping\DocumentMapper.cs</FileName>
@@ -123,14 +123,14 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Mapping.ConstraintValue">
-    <Position X="30.75" Y="22.75" Width="1.5" />
+    <Position X="30.75" Y="23.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Mapping\DocumentMapper.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Mapping.DocumentMapperComparer" BaseTypeListCollapsed="true">
-    <Position X="25.75" Y="22.75" Width="1.5" />
+    <Position X="25.75" Y="23.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAgAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
       <FileName>Mapping\DocumentMapperComparer.cs</FileName>
@@ -138,7 +138,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Mapping.ElasticProperty">
-    <Position X="28.75" Y="22.75" Width="1.5" />
+    <Position X="28.75" Y="23.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAIAAAAgAAAAAAAAAAAAAAAAQAAAgCAQAAAEA=</HashCode>
       <FileName>Mapping\ElasticProperty.cs</FileName>
@@ -147,10 +147,9 @@
   <Class Name="PersistentLayer.ElasticSearch.Mapping.MapperDescriptor&lt;TDocument&gt;" BaseTypeListCollapsed="true">
     <Position X="23.25" Y="18.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAACAAAAAAABACAAAAACAAgAIAEAABAAAAAAAACAAAA=</HashCode>
+      <HashCode>AAACAAAAAAABACAAAAACAAgAIAEAABAAAAAAAAAAABA=</HashCode>
       <FileName>Mapping\MapperDescriptor.cs</FileName>
     </TypeIdentifier>
-    <Lollipop Position="0.2" />
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Mapping.MapperDescriptorResolver" BaseTypeListCollapsed="true">
     <Position X="20.75" Y="15.25" Width="1.5" />
@@ -198,23 +197,22 @@
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Proxy.DocumentAdapter" Collapsed="true">
+  <Class Name="PersistentLayer.ElasticSearch.Proxy.DocumentAdapter">
     <Position X="10.5" Y="15.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>ABAAAAAAAAAAAAAEgAAAAAAAAAAgAIAAAAQACAAAAAA=</HashCode>
       <FileName>Proxy\DocumentAdapter.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="PersistentLayer.ElasticSearch.Proxy.DocumentAdapterResolver" Collapsed="true" BaseTypeListCollapsed="true">
+  <Class Name="PersistentLayer.ElasticSearch.Proxy.DocumentAdapterResolver" BaseTypeListCollapsed="true">
     <Position X="16.75" Y="15.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>ABAAAAAAAACAAAAAEAAAAAAAAAAAEAAAAAAAAAAAAAA=</HashCode>
       <FileName>Proxy\DocumentAdapterResolver.cs</FileName>
     </TypeIdentifier>
-    <Lollipop Position="0.2" />
   </Class>
   <Class Name="PersistentLayer.ElasticSearch.Proxy.ProxyGenerator" Collapsed="true">
-    <Position X="13.5" Y="16.25" Width="1.5" />
+    <Position X="13.5" Y="13.5" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAQAAAAAIAAIEAAAAAAIAgAgAAAAAAA=</HashCode>
       <FileName>Proxy\ProxyGenerator.cs</FileName>
@@ -242,7 +240,7 @@
     </TypeIdentifier>
   </Interface>
   <Interface Name="PersistentLayer.ElasticSearch.Mapping.IDocumentMapper">
-    <Position X="20.75" Y="22.75" Width="1.5" />
+    <Position X="20.75" Y="23.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAACAAAABAAAAAAAAAgAAAAAAAAAABAQACAAAAAAAAA=</HashCode>
       <FileName>Mapping\DocumentMapper.cs</FileName>
@@ -251,7 +249,7 @@
   <Interface Name="PersistentLayer.ElasticSearch.Mapping.IDocumentMapBuilder">
     <Position X="20.75" Y="18.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAABAAAAAAAAAAAAgAAAAAAAAAAAAAA=</HashCode>
+      <HashCode>AAAAAAAABAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA=</HashCode>
       <FileName>Mapping\IDocumentMapBuilder.cs</FileName>
     </TypeIdentifier>
   </Interface>
@@ -277,14 +275,14 @@
     </TypeIdentifier>
   </Interface>
   <Interface Name="PersistentLayer.ElasticSearch.IElasticRootPagedDAO&lt;TRootEntity, TEntity&gt;">
-    <Position X="28" Y="28.25" Width="1.5" />
+    <Position X="27" Y="31.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>IElasticRootPagedDAO.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="PersistentLayer.ElasticSearch.IElasticRootPagedDAO&lt;TRootEntity&gt;">
-    <Position X="33" Y="28.25" Width="1.5" />
+    <Position X="32" Y="31.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>IElasticRootPagedDAO.cs</FileName>
@@ -311,8 +309,36 @@
       <FileName>ISession.cs</FileName>
     </TypeIdentifier>
   </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticRootPersisterDAO&lt;TRootEntity, TEntity&gt;">
+    <Position X="26" Y="29" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>IElasticRootPersisterDAO.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticRootPersisterDAO&lt;TRootEntity&gt;">
+    <Position X="31" Y="29" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>IElasticRootPersisterDAO.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticRootQueryableDAO&lt;TRootEntity, TEntity&gt;">
+    <Position X="28.25" Y="29" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAEAAAAAAAAAEAAAAAAAAAAAAAAAAABIAAAAAA=</HashCode>
+      <FileName>IElasticRootQueryableDAO.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="PersistentLayer.ElasticSearch.IElasticRootQueryableDAO&lt;TRootEntity&gt;">
+    <Position X="33.25" Y="29" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAEAAAAAAAAAEAAAAAAAAAAAAAAAAABIAAAAAA=</HashCode>
+      <FileName>IElasticRootQueryableDAO.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
   <Enum Name="PersistentLayer.ElasticSearch.Mapping.KeyGenType">
-    <Position X="18.5" Y="22.75" Width="1.5" />
+    <Position X="18.5" Y="23.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAgA=</HashCode>
       <FileName>Mapping\KeyGenType.cs</FileName>

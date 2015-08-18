@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using PersistentLayer.Exceptions;
 
 namespace PersistentLayer.ElasticSearch.Impl
 {
@@ -101,6 +102,45 @@ namespace PersistentLayer.ElasticSearch.Impl
         {
             this.provider = null;
         }
+
+        public TKey GetIdentifier<TEntity, TKey>(TEntity instance, string index = null) where TEntity : class
+        {
+            return this.Session.GetIdentifier<TEntity, TKey>(instance, index);
+        }
+
+        public bool IsCached<TEntity>(TEntity instance, string index = null) where TEntity : class, TRootEntity
+        {
+            return this.Session.Cached(index, instance);
+        }
+
+        public bool IsDirty<TEntity>(TEntity instance) where TEntity : class, TRootEntity
+        {
+            return this.Session.Dirty(instance);
+        }
+
+        public TEntity Load<TEntity>(object identifier, string index = null) where TEntity : class, TRootEntity
+        {
+            var instance = this.FindBy<TEntity>(identifier);
+            if (instance == null)
+                throw new ExecutionQueryException("There's no instance with the given identifier", "Load");
+
+            return instance;
+        }
+
+        public bool SessionWithChanges()
+        {
+            return this.Session.Dirty();
+        }
+
+        public void Evict<TEntity>(TEntity entity, string index = null) where TEntity : class, TRootEntity
+        {
+            this.Session.Evict(index, entity);
+        }
+
+        public void Flush()
+        {
+            this.Session.Flush();
+        }
     }
 
     public class ElasticRootPagedDAO<TRootEntity, TEntity>
@@ -198,6 +238,45 @@ namespace PersistentLayer.ElasticSearch.Impl
         public void Dispose()
         {
             this.provider = null;
+        }
+
+        public TKey GetIdentifier<TKey>(TEntity instance, string index = null)
+        {
+            return this.Session.GetIdentifier<TEntity, TKey>(instance, index);
+        }
+
+        public bool IsCached(TEntity instance, string index = null)
+        {
+            return this.Session.Cached(index, instance);
+        }
+
+        public bool IsDirty(TEntity instance)
+        {
+            return this.Session.Dirty(instance);
+        }
+
+        public TEntity Load(object identifier, string index = null)
+        {
+            var instance = this.FindBy(identifier);
+            if (instance == null)
+                throw new ExecutionQueryException("There's no instance with the given identifier", "Load");
+
+            return instance;
+        }
+
+        public bool SessionWithChanges()
+        {
+            return this.Session.Dirty();
+        }
+
+        public void Evict(TEntity entity, string index = null)
+        {
+            this.Session.Evict(index, entity);
+        }
+
+        public void Flush()
+        {
+            this.Session.Flush();
         }
     }
 }
