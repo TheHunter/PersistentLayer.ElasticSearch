@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Dynamic;
 using Nest;
+using PersistentLayer.ElasticSearch.Mapping;
 using PersistentLayer.ElasticSearch.Metadata;
 
 namespace PersistentLayer.ElasticSearch.Extensions
@@ -11,6 +12,22 @@ namespace PersistentLayer.ElasticSearch.Extensions
     /// </summary>
     public static class MetadataExtension
     {
+        internal static TValue GetPropertyValue<TValue>(this object instance, ElasticProperty elasticProperty)
+        {
+            if (elasticProperty == null)
+                return default(TValue);
+            
+            return elasticProperty.GetValue<TValue>(instance);
+        }
+
+        internal static void SetPropertyValue(this object instance, object value, ElasticProperty elasticProperty)
+        {
+            if (elasticProperty == null)
+                return;
+            
+            elasticProperty.SetValue(instance, value);
+        }
+
         /// <summary>
         /// Converts into dynamic instance.
         /// </summary>

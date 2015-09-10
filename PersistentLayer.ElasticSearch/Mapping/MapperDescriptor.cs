@@ -34,9 +34,6 @@ namespace PersistentLayer.ElasticSearch.Mapping
         /// <returns></returns>
         public MapperDescriptor<TDocument> Id(Expression<Func<TDocument, object>> docExpression)
         {
-            ////var mapBuilder = this as IDocumentMapBuilder;
-
-            ////this.actions.Add(mapper => mapper.Id = mapBuilder.AsElasticProperty(docExpression));
             this.actions.Add(mapper => mapper.Id = docExpression.AsElasticProperty(this.inferrer));
             return this;
         }
@@ -48,9 +45,6 @@ namespace PersistentLayer.ElasticSearch.Mapping
         /// <returns></returns>
         public MapperDescriptor<TDocument> SurrogateKey(params Expression<Func<TDocument, object>>[] docExpression)
         {
-            ////var mapBuilder = this as IDocumentMapBuilder;
-
-            ////var list = docExpression.Select(mapBuilder.AsElasticProperty).ToList();
             var list = docExpression.Select(expression => expression.AsElasticProperty(this.inferrer)).ToList();
             this.actions.Add(mapper => mapper.SurrogateKey = list);
             return this;
@@ -82,14 +76,5 @@ namespace PersistentLayer.ElasticSearch.Mapping
             ret.KeyGenType = keyGenType;
             return ret;
         }
-        
-        ////ElasticProperty IDocumentMapBuilder.AsElasticProperty<TDoc>(Expression<Func<TDoc, object>> docExpression)
-        ////{
-        ////    var property = docExpression.AsPropertyInfo();
-
-        ////    return new ElasticProperty(property,
-        ////        this.inferrer.PropertyName(property),
-        ////        instance => docExpression.Compile().Invoke(instance as dynamic));
-        ////}
     }
 }

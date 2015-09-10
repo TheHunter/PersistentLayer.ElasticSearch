@@ -97,6 +97,12 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
                 var res0 = dao.FindBy<Person>(1);
                 Assert.NotNull(res0);
             }
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var res0 = dao.FindBy<Person>(1);
+                Assert.NotNull(res0);
+            }
         }
     }
 }

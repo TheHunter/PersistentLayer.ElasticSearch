@@ -75,6 +75,7 @@
     </Compile>
     <Compile Include="KeyGeneration\KeyGenStrategy.cs" />
     <Compile Include="KeyGeneration\KeyGeneratorResolver.cs" />
+    <Compile Include="Mapping\ConstraintValue.cs" />
     <Compile Include="Mapping\CustomIdResolver.cs">
       <SubType>Code</SubType>
     </Compile>

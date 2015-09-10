@@ -104,13 +104,31 @@ namespace PersistentLayer.ElasticSearch.Mapping
         {
             try
             {
-                this.valueAct.Invoke(instance, value);
+                object valToAssign;
+                if (!this.Property.PropertyType.IsInstanceOfType(value))
+                {
+                    if (this.Property.PropertyType == typeof(string))
+                    {
+                        valToAssign = value == null ? null : value.ToString();
+                    }
+                    else
+                    {
+                        valToAssign = value == null
+                            ? Activator.CreateInstance(this.Property.PropertyType)  // default value
+                            : Convert.ChangeType(value, this.Property.PropertyType);
+                    }
+                }
+                else
+                {
+                    valToAssign = value;
+                }
+
+                this.valueAct.Invoke(instance, valToAssign);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException("Impossible to assign the given value because It's not compatible.", ex);
             }
-
         }
     }
 }

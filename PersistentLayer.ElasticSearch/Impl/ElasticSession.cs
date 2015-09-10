@@ -104,7 +104,11 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .EnableSource()
                 );
 
-            var ids = new[] { idStr };
+            var ids = new List<string>
+            {
+                idStr
+            };
+
             var reqVerifier = this.Client.SearchAsync<TEntity>(descriptor => descriptor
                 .Index(indexName)
                 .Type(typeName)
@@ -118,10 +122,14 @@ namespace PersistentLayer.ElasticSearch.Impl
             if (!firstRequest.IsValid || !searchRequest.IsValid || !searchRequest.Hits.Any())
                 return null;
 
+            var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+            var instance = firstRequest.Source;
+            instance.SetPropertyValue(firstRequest.Version, docMapper.Version);
+
             if (this.TranInProgress)
                 this.GetCache(indexName).Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
 
-            return firstRequest.Source;
+            return instance;
         }
 
         public IEnumerable<TEntity> FindBy<TEntity>(string index = null, params object[] ids)
@@ -131,7 +139,7 @@ namespace PersistentLayer.ElasticSearch.Impl
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
 
-            var idsToHit = new List<string>();
+            var idsToSearch = new List<string>();
 
             var metadata = this.GetCache(indexName).FindMetadata(typeName)
                 .ToArray();
@@ -142,18 +150,20 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (current != null)
                     list.Add(current.Instance as dynamic);
                 else
-                    idsToHit.Add(id);
+                    idsToSearch.Add(id);
             }
 
             var response = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(indexName)
                 .Type(typeName)
-                .Query(queryDescriptor => queryDescriptor.Ids(idsToHit.ToArray()))
+                .Query(queryDescriptor => queryDescriptor.Ids(idsToSearch))
                 .ApplySessionFilter(SessionFieldName, this.Id)
                 );
 
+            var docMapper = this.GetDocumentMapper<TEntity>(indexName);
             foreach (var hit in response.Hits)
             {
+                hit.Source.SetPropertyValue(hit.Version, docMapper.Version);
                 this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
                 list.Add(hit.Source);
             }
@@ -173,15 +183,20 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .ApplySessionFilter(SessionFieldName, this.Id)
                 );
 
+            var cache = this.GetCache(indexName);
+            var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+
             var docs = new List<TEntity>();
             foreach (var hit in response.Hits)
             {
-                var metadata = this.GetCache(indexName).SingleOrDefault(hit.Id, hit.Type);
+                var metadata = cache.SingleOrDefault(hit.Id, hit.Type);
+                var instance = hit.Source;
 
                 if (metadata == null)
                 {
-                    docs.Add(hit.Source);
-                    this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
+                    instance.SetPropertyValue(hit.Version, docMapper.Version);
+                    docs.Add(instance);
+                    cache.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
                 }
                 else
                 {
@@ -203,16 +218,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             // A document can already exist, but is only visible by transaction owner.
             var request = this.Client.Search<TEntity>(descriptor => descriptor
                 .Index(index ?? this.Index)
-                .Query(q => q.Ids(ids.Select(n => n.ToString())))
+                .Query(q => q.Ids(ids.Select(n => n.ToString()).ToList()))
                 .Source(false)
-                ////.Filter(fd => fd
-                ////    .Or(fd1 => fd1.Missing(SessionFieldName),
-                ////        fd2 => fd2.And(
-                ////            fd22 => fd22.Exists(SessionFieldName),
-                ////            fd23 => fd23.Term(SessionFieldName, this.Id)
-                ////        )
-                ////    )
-                ////)
                 );
 
             return request.Hits.Count() == ids.Length;
@@ -262,8 +269,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                             var keyGenerator = this.GetKeyGenerator(indexName, typeName, typeof(TEntity), docMapper);
                             var key = keyGenerator.Next();
 
-                            if (docMapper.Id != null)
-                                docMapper.Id.SetValue(entity, key);
+                            entity.SetPropertyValue(key, docMapper.Id);
 
                             return this.Save(entity, key.ToString(), indexName);
                         }
@@ -279,15 +285,19 @@ namespace PersistentLayer.ElasticSearch.Impl
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
+                            entity.SetPropertyValue(response.Version, docMapper.Version);
                             this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity, readOnly: !this.TranInProgress));
 
                             return entity;
                         }
+                    default:
+                        {
+                            return this.Save(entity, id, indexName);
+                        }
                 }
-                return this.Save(entity, id, indexName);
             }
 
-            this.UpdateInstance(entity, id, typeName);
+            this.UpdateInstance(entity, id, typeName, indexName);
             return entity;
         }
 
@@ -617,7 +627,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (metadata == null)
                     continue;
 
-                metadata.BecomePersistent(item.Version);
+                ////metadata.BecomePersistent(item.Version);
 
                 #region
 
