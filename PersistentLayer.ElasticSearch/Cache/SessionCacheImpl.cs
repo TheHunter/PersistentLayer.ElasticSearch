@@ -212,7 +212,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                 }
             }
 
-            if (!request.Operations.Any())
+            if (request.Operations == null || !request.Operations.Any())
                 return true;
 
             IBulkResponse response = this.client.Bulk(request);

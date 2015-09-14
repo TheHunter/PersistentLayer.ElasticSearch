@@ -23,8 +23,10 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly ElasticSession session;
         private readonly Dictionary<TransactionOperations, List<Action>> tranActionActions;
 
-        public ElasticTransactionProvider(IElasticClient client, IObjectEvaluator evaluator, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
+        public ElasticTransactionProvider(IElasticClient client, IObjectEvaluator evaluator, CustomIdResolver idResolver, KeyGeneratorResolver keyResolver, MapperDescriptorResolver mapResolver, DocumentAdapterResolver adapterResolver)
         {
+            client.RefreshAsync(descriptor => descriptor.Index(client.Infer.DefaultIndex));
+
             this.Client = client;
             this.transactions = new Stack<ITransactionInfo>();
             this.tranActionActions = new Dictionary<TransactionOperations, List<Action>>
@@ -34,7 +36,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 {TransactionOperations.Rollback, new List<Action>()}
             };
 
-            this.session = new ElasticSession(client.Infer.DefaultIndex, this, evaluator, mapResolver, keyResolver, adapterResolver, client);
+            this.session = new ElasticSession(client.Infer.DefaultIndex, this, evaluator, mapResolver, idResolver, keyResolver, adapterResolver, client);
         }
 
         public IElasticClient Client { get; private set; }
@@ -111,7 +113,14 @@ namespace PersistentLayer.ElasticSearch.Impl
                     }
                     catch (Exception ex)
                     {
-                        throw new CommitFailedException(string.Format("Error when the current session tries to commit the current transaction (name: {0}).", info.Name), "CommitTransaction", ex);
+                        throw new CommitFailedException(
+                            string.Format(
+                                "Error when the current session tries to commit the current transaction (name: {0}).",
+                                info.Name), "CommitTransaction", ex);
+                    }
+                    finally
+                    {
+                        this.Client.Refresh(descriptor => descriptor.Index(this.Client.Infer.DefaultIndex));
                     }
                 }
                 else
@@ -145,6 +154,9 @@ namespace PersistentLayer.ElasticSearch.Impl
             {
                 this.Session.Evict();
                 this.tranActionActions[TransactionOperations.Rollback].ForEach(action => action.Invoke());
+
+                this.Client.Refresh(descriptor => descriptor.IgnoreUnavailable(false));
+
                 var info = this.transactions.Pop();
 
                 if (this.transactions.Count > 0)
@@ -163,8 +175,19 @@ namespace PersistentLayer.ElasticSearch.Impl
 
     public enum TransactionOperations
     {
+        /// <summary>
+        /// The begin.
+        /// </summary>
         Begin = 1,
+
+        /// <summary>
+        /// The commit.
+        /// </summary>
         Commit = 2,
+
+        /// <summary>
+        /// The rollback.
+        /// </summary>
         Rollback = 3
     }
 }

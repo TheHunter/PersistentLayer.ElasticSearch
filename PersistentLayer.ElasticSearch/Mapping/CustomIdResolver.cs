@@ -11,6 +11,11 @@ namespace PersistentLayer.ElasticSearch.Mapping
     public class CustomIdResolver
         : IdResolver
     {
+        public CustomIdResolver(IConnectionSettingsValues connectionSettings)
+            : base(connectionSettings)
+        {
+        }
+
         /// <summary>
         /// The has id property.
         /// </summary>

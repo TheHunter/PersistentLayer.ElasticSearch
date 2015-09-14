@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq.Expressions;
 using System.Reflection;
+using Nest;
 using PersistentLayer.ElasticSearch.Extensions;
 
 namespace PersistentLayer.ElasticSearch.Mapping
@@ -42,6 +44,18 @@ namespace PersistentLayer.ElasticSearch.Mapping
             this.ElasticName = elasticName;
             this.valueFunc = valueFunc;
             this.valueAct = (instance, value) => property.MakeSetter().DynamicInvoke(instance, value);
+        }
+
+        /// <summary>
+        /// Makes the property of.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of the document.</typeparam>
+        /// <param name="propertyExpression">The property expression.</param>
+        /// <param name="inferrer">The inferrer.</param>
+        /// <returns></returns>
+        public static ElasticProperty MakePropertyOf<TDocument>(Expression<Func<TDocument, object>> propertyExpression, ElasticInferrer inferrer)
+        {
+            return propertyExpression.AsElasticProperty(inferrer);
         }
 
         /// <summary>

@@ -17,14 +17,16 @@ namespace PersistentLayer.ElasticSearch.Mapping
     {
         private readonly List<Action<DocumentMapper<TDocument>>> actions;
         private readonly ElasticInferrer inferrer;
-        private readonly CustomIdResolver idResolver = new CustomIdResolver();
+        //private readonly CustomIdResolver idResolver = new CustomIdResolver();
+        private readonly CustomIdResolver idResolver;
         private readonly Type docType;
 
-        public MapperDescriptor(ElasticInferrer inferrer)
+        public MapperDescriptor(ElasticInferrer inferrer, CustomIdResolver idResolver)
         {
             this.actions = new List<Action<DocumentMapper<TDocument>>>();
             this.inferrer = inferrer;
             this.docType = typeof(TDocument);
+            this.idResolver = idResolver;
         }
 
         /// <summary>

@@ -29,7 +29,7 @@ namespace PersistentLayer.ElasticSearch.Impl
         private readonly DocumentAdapterResolver adapterResolver;
         private readonly HashSet<SessionCacheImpl> indexLocalCache;
 
-        public ElasticSession(string indexName, ElasticTransactionProvider transactionProvider, IObjectEvaluator evaluator, MapperDescriptorResolver mapResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
+        public ElasticSession(string indexName, ElasticTransactionProvider transactionProvider, IObjectEvaluator evaluator, MapperDescriptorResolver mapResolver, CustomIdResolver idResolver, KeyGeneratorResolver keyStrategyResolver, DocumentAdapterResolver adapterResolver, IElasticClient client)
         {
             this.Id = Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture);
             this.Index = indexName;
@@ -37,7 +37,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             this.mapResolver = mapResolver;
             this.keyStrategyResolver = keyStrategyResolver;
             this.Client = client;
-            this.idResolver = new CustomIdResolver();
+
+            this.idResolver = idResolver;
             this.evaluator = evaluator;
 
             this.keyGenerators = new HashSet<ElasticKeyGenerator>();
@@ -215,14 +216,14 @@ namespace PersistentLayer.ElasticSearch.Impl
         public bool Exists<TEntity>(string index = null, params object[] ids)
             where TEntity : class
         {
-            // A document can already exist, but is only visible by transaction owner.
-            var request = this.Client.Search<TEntity>(descriptor => descriptor
-                .Index(index ?? this.Index)
-                .Query(q => q.Ids(ids.Select(n => n.ToString()).ToList()))
-                .Source(false)
-                );
+            var idss = new List<string>(ids.Select(n => n.ToString()));
 
-            return request.Hits.Count() == ids.Length;
+            // A document can already exist, but is only visible by transaction owner.
+            var request = this.Client.Count<TEntity>(descriptor => descriptor
+                .Index(index ?? this.Index)
+                .Query(q => q.Ids(idss))
+                );
+            return request.Count == ids.Length;
         }
 
         public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate, string index = null)

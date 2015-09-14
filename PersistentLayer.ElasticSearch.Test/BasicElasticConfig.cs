@@ -48,6 +48,11 @@ namespace PersistentLayer.ElasticSearch.Test
             builder.Register(context => new ElasticInferrer(context.Resolve<Func<string, ConnectionSettings>>().Invoke("current")))
                 .AsSelf();
 
+            builder.Register(context => new ConnectionSettings())
+                .As<IConnectionSettingsValues>();
+
+            // manca la registrazione del CustomIdResolver.. 
+
             builder.RegisterType<MapperDescriptorResolver>()
                 .SingleInstance()
                 .AsSelf()
@@ -55,8 +60,10 @@ namespace PersistentLayer.ElasticSearch.Test
                 {
                     var instance = args.Instance;
                     var inferrer = args.Context.Resolve<ElasticInferrer>();
+                    var idResolver = args.Context.Resolve<CustomIdResolver>();
+
                     instance.Register(
-                        new MapperDescriptor<Person>(inferrer)
+                        new MapperDescriptor<Person>(inferrer, idResolver)
                             .SurrogateKey(person => person.Cf)
                             .SetProperty(mapper => mapper.Version = mapper.MakeElasticProperty(person => person.Version))
                         );
@@ -102,6 +109,7 @@ namespace PersistentLayer.ElasticSearch.Test
         {
             return new ElasticTransactionProvider(this.MakeElasticClient(defaultIndex),
                 this.container.Resolve<IObjectEvaluator>(),
+                this.container.Resolve<CustomIdResolver>(),
                 this.container.Resolve<KeyGeneratorResolver>(),
                 this.container.Resolve<MapperDescriptorResolver>(),
                 this.container.Resolve<DocumentAdapterResolver>()
@@ -148,7 +156,7 @@ namespace PersistentLayer.ElasticSearch.Test
         {
             jsonSettings.NullValueHandling = NullValueHandling.Ignore;
             jsonSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
-            jsonSettings.TypeNameHandling = TypeNameHandling.Auto;
+            //jsonSettings.TypeNameHandling = TypeNameHandling.Auto;
             jsonSettings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
             jsonSettings.ContractResolver = new DynamicContractResolver(connectionSettings);
         }
