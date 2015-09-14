@@ -267,7 +267,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                         }
                     case KeyGenType.Identity:
                         {
-                            var keyGenerator = this.GetKeyGenerator(indexName, typeName, typeof(TEntity), docMapper);
+                            var keyGenerator = this.GetKeyGenerator(indexName, typeName, docMapper.Id);
                             var key = keyGenerator.Next();
 
                             entity.SetPropertyValue(key, docMapper.Id);
@@ -400,6 +400,8 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
+                // qui si puo considerare si aggiornare il documento prima di metterlo nella cache.
+                // ossia aggiornare le proprietà Id e Version (solo se quest'ultima e' presente)..
                 this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity, readOnly: !this.TranInProgress));
             }
             
@@ -760,23 +762,23 @@ namespace PersistentLayer.ElasticSearch.Impl
             return current;
         }
 
-        private ElasticKeyGenerator GetKeyGenerator(string index, string typeName, Type type, IDocumentMapper docMapper)
+        private ElasticKeyGenerator GetKeyGenerator(string index, string typeName, ElasticProperty keyProperty)
         {
             var current =
                 this.keyGenerators.FirstOrDefault(
                     generator => generator.Index.Equals(index, StringComparison.InvariantCulture)
                         && generator.TypeName.Equals(typeName, StringComparison.InvariantCulture)
-                        && generator.KeyType == docMapper.Id.PropertyType
+                        && generator.KeyType == keyProperty.PropertyType
                     );
 
-            if (current == null && docMapper.Id != null)
+            if (current == null && keyProperty != null)
             {
-                var keyGenStrategy = this.keyStrategyResolver.Resolve(docMapper.Id.PropertyType);
+                var keyGenStrategy = this.keyStrategyResolver.Resolve(keyProperty.PropertyType);
 
                 if (keyGenStrategy == null)
-                    throw new BusinessPersistentException(string.Format("No key generation strategy was founded, KeyType: {0}", type.Name), "GetKeyGenerator");
+                    throw new BusinessPersistentException(string.Format("No key generation strategy was founded, KeyType: {0}", keyProperty.PropertyType.Name), "GetKeyGenerator");
 
-                var lastValue = this.Client.GetMaxValueOf(docMapper.Id, index, typeName);
+                var lastValue = this.Client.GetMaxValueOf(keyProperty, index, typeName);
 
                 current = new ElasticKeyGenerator(keyGenStrategy, lastValue, index, typeName);
                 this.keyGenerators.Add(current);

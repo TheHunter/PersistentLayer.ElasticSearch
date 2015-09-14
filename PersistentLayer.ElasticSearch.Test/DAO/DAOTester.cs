@@ -57,7 +57,6 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
 
             using (var dao = this.MakePagedDao(defaultIndex))
             {
-                // returns the document from storage.
                 Assert.True(dao.Exists<Person>(persons.Select(n => n.Id).ToList()));
             }
         }
