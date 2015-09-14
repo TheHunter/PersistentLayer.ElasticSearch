@@ -77,6 +77,7 @@
     <Compile Include="Documents\Person.cs" />
     <Compile Include="Documents\Student.cs" />
     <Compile Include="Extensions\ElasticClientExtensionsTest.cs" />
+    <Compile Include="Extensions\ReflectionExtensionTest.cs" />
     <Compile Include="KeyGeneration\KeyGeneratorTest.cs" />
     <Compile Include="Metadata\MetadataTester.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

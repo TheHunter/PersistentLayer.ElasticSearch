@@ -117,7 +117,7 @@ namespace PersistentLayer.ElasticSearch.Extensions
             if (value.GetType() == property.PropertyType)
                 return value;
 
-            return Convert.ChangeType(value, property.PropertyType);
+            return Convert.ChangeType(value, property.PropertyType.TryToUnboxType());
         }
     }
 }

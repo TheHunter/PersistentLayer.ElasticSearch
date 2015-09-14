@@ -35,7 +35,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public bool Exists<TEntity>(ICollection identifiers) where TEntity : class, TRootEntity
         {
-            return this.Session.Exists<TEntity>(ids: identifiers);
+            return this.Session.Exists<TEntity>(ids: identifiers.Cast<object>().ToArray());
         }
 
         public bool Exists<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class, TRootEntity

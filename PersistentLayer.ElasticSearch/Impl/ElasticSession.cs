@@ -766,7 +766,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 this.keyGenerators.FirstOrDefault(
                     generator => generator.Index.Equals(index, StringComparison.InvariantCulture)
                         && generator.TypeName.Equals(typeName, StringComparison.InvariantCulture)
-                        && generator.KeyType == type
+                        && generator.KeyType == docMapper.Id.PropertyType
                     );
 
             if (current == null && docMapper.Id != null)

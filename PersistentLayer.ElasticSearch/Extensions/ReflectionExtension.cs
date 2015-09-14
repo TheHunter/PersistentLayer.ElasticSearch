@@ -116,5 +116,18 @@ namespace PersistentLayer.ElasticSearch.Extensions
             var interfaces = type.GetInterfaces();
             return interfaceTypes.All(t => interfaces.FirstOrDefault(current => current == t) != null);
         }
+
+        public static bool IsPrimitiveNullable(this Type type)
+        {
+            return type.IsGenericType && type.Name.Equals("Nullable`1", StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public static Type TryToUnboxType(this Type type)
+        {
+            if (!type.IsPrimitiveNullable())
+                return type;
+
+            return type.GetGenericArguments()[0];
+        }
     }
 }

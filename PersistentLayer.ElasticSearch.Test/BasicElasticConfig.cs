@@ -48,10 +48,14 @@ namespace PersistentLayer.ElasticSearch.Test
             builder.Register(context => new ElasticInferrer(context.Resolve<Func<string, ConnectionSettings>>().Invoke("current")))
                 .AsSelf();
 
-            builder.Register(context => new ConnectionSettings())
-                .As<IConnectionSettingsValues>();
+            ////builder.Register(context => new ConnectionSettings())
+            ////    .As<IConnectionSettingsValues>();
 
             // manca la registrazione del CustomIdResolver.. 
+
+            builder.Register(
+                context => new CustomIdResolver(context.Resolve<Func<string, ConnectionSettings>>().Invoke("current")))
+                .AsSelf();
 
             builder.RegisterType<MapperDescriptorResolver>()
                 .SingleInstance()

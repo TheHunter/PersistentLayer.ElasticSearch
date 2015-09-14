@@ -41,6 +41,7 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
         {
             var client = this.MakeElasticClient(defaultIndex);
             client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
+            client.Refresh(descriptor => descriptor.Force());
 
             var persons = new List<Person>();
             using (var dao = this.MakePagedDao(defaultIndex))
@@ -57,8 +58,36 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
             using (var dao = this.MakePagedDao(defaultIndex))
             {
                 // returns the document from storage.
-                Assert.True(dao.Exists<Person>(persons.Select(n => n.Id)));
+                Assert.True(dao.Exists<Person>(persons.Select(n => n.Id).ToList()));
             }
+        }
+
+        [Theory]
+        [InlineData("currentforfind")]
+        public void UniqueResultTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("currentforfind")]
+        public void FindAllTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("currentforfind")]
+        public void ExecuteExpressionTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("currentforfind")]
+        public void GetPagedResultTest()
+        {
+            throw new NotImplementedException();
         }
 
         [Theory]
@@ -147,6 +176,62 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
                 var res0 = dao.FindBy<Person>(1);
                 Assert.NotNull(res0);
             }
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void MakeTransientTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void GetIdentifierTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void IsCachedTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void IsDirtyTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void LoadTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void SessionWithChangesTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void EvictTest()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void FlushTest()
+        {
+            throw new NotImplementedException();
         }
     }
 }
