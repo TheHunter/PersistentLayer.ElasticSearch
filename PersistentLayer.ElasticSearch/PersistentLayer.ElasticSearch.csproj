@@ -57,6 +57,7 @@
     <Compile Include="Cache\SessionCacheImpl.cs" />
     <Compile Include="CustomNestSerializer.cs" />
     <Compile Include="Extensions\ElasticClientExtension.cs" />
+    <Compile Include="Extensions\ElasticResponseExtension.cs" />
     <Compile Include="Extensions\QueryDescriptorExtension.cs" />
     <Compile Include="Extensions\ReflectionExtension.cs" />
     <Compile Include="IComponentResolver.cs" />

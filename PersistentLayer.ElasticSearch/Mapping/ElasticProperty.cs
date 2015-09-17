@@ -129,7 +129,7 @@ namespace PersistentLayer.ElasticSearch.Mapping
                     {
                         valToAssign = value == null
                             ? Activator.CreateInstance(this.Property.PropertyType)  // default value
-                            : Convert.ChangeType(value, this.Property.PropertyType);
+                            : Convert.ChangeType(value, this.Property.PropertyType.TryToUnboxType());
                     }
                 }
                 else

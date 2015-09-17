@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using Elasticsearch.Net;
 using Nest;
 using PersistentLayer.ElasticSearch.Cache;
 using PersistentLayer.ElasticSearch.Exceptions;
@@ -114,6 +115,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .Index(indexName)
                 .Type(typeName)
                 .Query(q => q.Ids(ids))
+                .Version()
                 .ApplySessionFilter(SessionFieldName, this.Id)
                 );
 
@@ -125,7 +127,8 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             var docMapper = this.GetDocumentMapper<TEntity>(indexName);
             var instance = firstRequest.Source;
-            instance.SetPropertyValue(firstRequest.Version, docMapper.Version);
+            
+            firstRequest.OverrideProperties(docMapper, instance);
 
             if (this.TranInProgress)
                 this.GetCache(indexName).Attach(firstRequest.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
@@ -158,13 +161,15 @@ namespace PersistentLayer.ElasticSearch.Impl
                 .Index(indexName)
                 .Type(typeName)
                 .Query(queryDescriptor => queryDescriptor.Ids(idsToSearch))
+                .Version()
                 .ApplySessionFilter(SessionFieldName, this.Id)
                 );
 
             var docMapper = this.GetDocumentMapper<TEntity>(indexName);
             foreach (var hit in response.Hits)
             {
-                hit.Source.SetPropertyValue(hit.Version, docMapper.Version);
+                ////hit.Source.SetPropertyValue(hit.Version, docMapper.Version);
+                hit.OverrideProperties(docMapper, hit.Source);
                 this.GetCache(indexName).Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
                 list.Add(hit.Source);
             }
@@ -195,7 +200,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
                 if (metadata == null)
                 {
-                    instance.SetPropertyValue(hit.Version, docMapper.Version);
+                    hit.OverrideProperties(docMapper, hit.Source);
                     docs.Add(instance);
                     cache.Attach(hit.AsMetadata(this.evaluator, OriginContext.Storage, readOnly: !this.TranInProgress));
                 }
@@ -247,9 +252,8 @@ namespace PersistentLayer.ElasticSearch.Impl
             var indexName = index ?? this.Index;
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+            var id = entity.GetPropertyValue<string>(docMapper.Id);
 
-            var id = docMapper.Id != null ? docMapper.Id.GetValue<string>(entity) : null;
-            
             if (string.IsNullOrWhiteSpace(id))
             {
                 var exists = this.Client.DocumentExists(indexName, typeName, entity, docMapper.GetConstraintValues(entity).ToArray());
@@ -269,10 +273,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                         {
                             var keyGenerator = this.GetKeyGenerator(indexName, typeName, docMapper.Id);
                             var key = keyGenerator.Next();
-
-                            entity.SetPropertyValue(key, docMapper.Id);
-
-                            return this.Save(entity, key.ToString(), indexName);
+                            return this.Save(entity, key, indexName);
                         }
                     case KeyGenType.Native:
                         {
@@ -286,7 +287,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                             if (!response.Created)
                                 throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                            entity.SetPropertyValue(response.Version, docMapper.Version);
+                            response.OverrideProperties(docMapper, entity);
                             this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity, readOnly: !this.TranInProgress));
 
                             return entity;
@@ -297,11 +298,11 @@ namespace PersistentLayer.ElasticSearch.Impl
                         }
                 }
             }
-
+            //// so, in this case the document is need to update.
             this.UpdateInstance(entity, id, typeName, indexName);
             return entity;
         }
-
+        
         public TEntity Update<TEntity>(TEntity entity, string index = null, string version = null)
             where TEntity : class
         {
@@ -347,10 +348,12 @@ namespace PersistentLayer.ElasticSearch.Impl
             }
             else
             {
-                var response = this.Client.Get<TEntity>(id, index ?? this.Index);
+                var response = this.Client.Get<TEntity>(id, indexName);
                 if (!response.Found)
                     throw new BusinessPersistentException("Error on retrieving the instance with the given identifier", "UpdateInstance");
 
+                var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+                response.OverrideProperties(docMapper, response.Source);
                 this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Storage, version: version, readOnly: !this.TranInProgress));
             }
         }
@@ -365,13 +368,13 @@ namespace PersistentLayer.ElasticSearch.Impl
             return entities;
         }
 
-        public TEntity Save<TEntity>(TEntity entity, string id, string index = null)
+        public TEntity Save<TEntity>(TEntity entity, object id, string index = null)
             where TEntity : class
         {
             if (!this.TranInProgress)
                 return entity;
 
-            var idStr = id;
+            var idStr = id.ToString();
             var typeName = this.Client.Infer.TypeName<TEntity>();
             var indexName = index ?? this.Index;
             var cached = this.GetCache(indexName).SingleOrDefault(idStr, typeName);
@@ -400,8 +403,9 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (!response.Created)
                     throw new BusinessPersistentException("Internal error When session tried to save to given instance.", "Save");
 
-                // qui si puo considerare si aggiornare il documento prima di metterlo nella cache.
-                // ossia aggiornare le proprietà Id e Version (solo se quest'ultima e' presente)..
+                var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+                response.OverrideProperties(docMapper, entity);
+
                 this.GetCache(indexName).Attach(response.AsMetadata(this.evaluator, OriginContext.Newone, entity, readOnly: !this.TranInProgress));
             }
             
@@ -449,7 +453,10 @@ namespace PersistentLayer.ElasticSearch.Impl
                 );
 
             if (!response.Found)
-                throw new ExecutionQueryException("The given instance wasn't found on storage.", "MakeTransient");
+                throw new ExecutionQueryException("The given instance wasn't found on storage.", "RefreshState");
+
+            var docMapper = this.GetDocumentMapper<TEntity>(indexName);
+            response.OverrideProperties(docMapper, response.Source);
 
             if (!this.TranInProgress)
                 return response.Source;
@@ -630,9 +637,10 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (metadata == null)
                     continue;
 
-                ////metadata.BecomePersistent(item.Version);
-
                 #region
+
+                // qui occorre recuperare il mapper del documento
+                var docMapper = this.GetDocumentMapper(metadata.InstanceType, metadata.IndexName);
 
                 if (metadata.Origin == OriginContext.Newone)
                 {
@@ -641,10 +649,12 @@ namespace PersistentLayer.ElasticSearch.Impl
                         .Id(current.Id)
                         .Type(current.Type)
                         .Index(this.Index)
+                        ////.VersionType(VersionType.Force)
                         .Version(Convert.ToInt64(current.Version))
                         .Script(string.Format("ctx._source.remove(\"{0}\")", "\\" + SessionFieldName))
                         );
 
+                    respo.OverrideProperties(docMapper, metadata.Instance);
                     if (respo.IsValid)
                     {
                         metadata.BecomePersistent(respo.Version);
@@ -656,6 +666,7 @@ namespace PersistentLayer.ElasticSearch.Impl
                 }
                 else
                 {
+                    item.OverrideProperties(docMapper, metadata.Instance);
                     metadata.BecomePersistent(item.Version);
                 }
 
@@ -731,18 +742,17 @@ namespace PersistentLayer.ElasticSearch.Impl
             return destination;
         }
 
-        private IDocumentMapper GetDocumentMapper<TEntity>(string index) where TEntity : class
+        private IDocumentMapper GetDocumentMapper(Type docType, string index)
         {
-            Type docType = typeof(TEntity);
             IDocumentMapper current = this.docMappers.FirstOrDefault(mapper => mapper.DocumentType == docType);
 
             if (current != null)
                 return current;
 
-            var mapperDescriptor = this.mapResolver.Resolve<TEntity>();
+            var mapperDescriptor = this.mapResolver.Resolve(docType);
             if (mapperDescriptor == null)
             {
-                var property = this.idResolver.GetPropertyInfo(docType) ?? this.Client.GetIdPropertyInfoOf<TEntity>(index);
+                var property = this.idResolver.GetPropertyInfo(docType) ?? this.Client.GetIdPropertyInfoOf(index, docType);
 
                 current = new DocumentMapper(docType)
                 {
@@ -754,12 +764,17 @@ namespace PersistentLayer.ElasticSearch.Impl
             else
             {
                 current = mapperDescriptor.Build();
-                this.Client.SetIdFieldMappingOf<TEntity>(current.Id, index);
+                this.Client.SetIdFieldMappingOf(current.Id, index, docType);
             }
 
             this.docMappers.Add(current);
 
             return current;
+        }
+        
+        private IDocumentMapper GetDocumentMapper<TEntity>(string index) where TEntity : class
+        {
+            return this.GetDocumentMapper(typeof(TEntity), index);
         }
 
         private ElasticKeyGenerator GetKeyGenerator(string index, string typeName, ElasticProperty keyProperty)

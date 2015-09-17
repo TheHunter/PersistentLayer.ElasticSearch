@@ -20,11 +20,22 @@ namespace PersistentLayer.ElasticSearch.Extensions
             return elasticProperty.GetValue<TValue>(instance);
         }
 
+        internal static object GetPropertyValue(this object instance, ElasticProperty elasticProperty)
+        {
+            if (elasticProperty == null)
+                return null;
+
+            return elasticProperty.GetValue(instance);
+        }
+
         internal static void SetPropertyValue(this object instance, object value, ElasticProperty elasticProperty)
         {
             if (elasticProperty == null)
                 return;
-            
+
+            if (instance == null)
+                return;
+
             elasticProperty.SetValue(instance, value);
         }
 
