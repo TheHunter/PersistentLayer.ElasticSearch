@@ -596,29 +596,53 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             foreach (var metadata in metadataToPersist)
             {
-                // qui occorre recuperare il mapper del documento
-                
                 /*
                     iT'S OCCURRED TO DO 3 CASES:
                  *  1) When doc needs to be updated only.
                  *  2) When doc needs to become persistent (removing the idsession property on repository server..)
                  *  3) WHen doc needs to make both operations (1 & 2).
                 */
-                
-                request.Operations.Add(
-                    new BulkUpdateOperation<object, object>(metadata.Id)
+
+                var docMapper = this.GetDocumentMapper(metadata.InstanceType, metadata.IndexName);
+                var current = new BulkUpdateOperation<object, object>(metadata.Id)
+                {
+                    Index = metadata.IndexName,
+                    Type = metadata.TypeName,
+                    Version = metadata.Version,
+                    ////VersionType = VersionType.Force,
+                    ////Script =
+                    ////    "doc.each { k, v -> if (k == version) { v++ }; ctx._source[k] = v }; ctx._source.remove(idsessionname); ",
+                    ////Params = new Dictionary<string, object>
+                    ////{
+                    ////    {"doc", metadata.Instance},
+                    ////    {"idsessionname", SessionFieldName},
+                    ////    {"version", docMapper.Version != null ? docMapper.Version.ElasticName : string.Empty}
+                    ////}
+                };
+
+                string versionStr = string.Empty;
+                var pars = new Dictionary<string, object>
+                {
+                    {"doc", metadata.Instance},
+                    {"idsessionname", SessionFieldName}
+                };
+
+                if (!metadata.HasChanged())
+                {
+                    current.VersionType = VersionType.Force;
+                }
+                else
+                {
+                    if (docMapper.Version != null)
                     {
-                        Index = metadata.IndexName,
-                        Type = metadata.TypeName,
-                        Version = metadata.Version,
-                        Script = "doc.each { k, v -> ctx._source[k] = v }; ctx._source.remove(idsessionname)",
-                        Params = new Dictionary<string, object>
-                        {
-                            { "idsessionname", "SessionFieldName" },
-                            { "doc", metadata.Instance }
-                        }
+                        versionStr = " if (k == version) { v++ }";
+                        pars.Add("version", docMapper.Version.ElasticName ?? string.Empty);
                     }
-                    );
+                }
+                current.Script = string.Format("doc.each {{ k, v ->{0} ctx._source[k] = v }}; ctx._source.remove(idsessionname);", versionStr);
+                current.Params = pars;
+
+                request.Operations.Add(current);
             }
 
             var response = this.Client.Bulk(request);
@@ -645,6 +669,9 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             // everything was gone well.. so It's requeried to update metadata with bulk response
             // so Version and Origin (for new instances).
+            if (response.Items == null)
+                return;
+
             foreach (var item in response.Items)
             {
                 var metadata = cache.SingleOrDefault(item.Id, item.Type);
