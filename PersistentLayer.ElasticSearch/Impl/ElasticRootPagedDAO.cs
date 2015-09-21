@@ -95,7 +95,7 @@ namespace PersistentLayer.ElasticSearch.Impl
 
         public void MakeTransient<TEntity>(IEnumerable<TEntity> entities) where TEntity : class, TRootEntity
         {
-            this.Session.MakeTransient(entities: entities);
+            this.Session.MakeTransient(entities: entities.ToArray());
         }
 
         public void Dispose()

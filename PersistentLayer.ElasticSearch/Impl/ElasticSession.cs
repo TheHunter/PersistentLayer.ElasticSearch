@@ -596,13 +596,27 @@ namespace PersistentLayer.ElasticSearch.Impl
 
             foreach (var metadata in metadataToPersist)
             {
+                // qui occorre recuperare il mapper del documento
+                
+                /*
+                    iT'S OCCURRED TO DO 3 CASES:
+                 *  1) When doc needs to be updated only.
+                 *  2) When doc needs to become persistent (removing the idsession property on repository server..)
+                 *  3) WHen doc needs to make both operations (1 & 2).
+                */
+                
                 request.Operations.Add(
                     new BulkUpdateOperation<object, object>(metadata.Id)
                     {
                         Index = metadata.IndexName,
                         Type = metadata.TypeName,
                         Version = metadata.Version,
-                        Doc = metadata.Instance,
+                        Script = "doc.each { k, v -> ctx._source[k] = v }; ctx._source.remove(idsessionname)",
+                        Params = new Dictionary<string, object>
+                        {
+                            { "idsessionname", "SessionFieldName" },
+                            { "doc", metadata.Instance }
+                        }
                     }
                     );
             }
@@ -637,40 +651,9 @@ namespace PersistentLayer.ElasticSearch.Impl
                 if (metadata == null)
                     continue;
 
-                #region
-
-                // qui occorre recuperare il mapper del documento
                 var docMapper = this.GetDocumentMapper(metadata.InstanceType, metadata.IndexName);
-
-                if (metadata.Origin == OriginContext.Newone)
-                {
-                    BulkOperationResponseItem current = item;
-                    var respo = this.Client.Update<object>(descriptor => descriptor
-                        .Id(current.Id)
-                        .Type(current.Type)
-                        .Index(this.Index)
-                        ////.VersionType(VersionType.Force)
-                        .Version(Convert.ToInt64(current.Version))
-                        .Script(string.Format("ctx._source.remove(\"{0}\")", "\\" + SessionFieldName))
-                        );
-
-                    respo.OverrideProperties(docMapper, metadata.Instance);
-                    if (respo.IsValid)
-                    {
-                        metadata.BecomePersistent(respo.Version);
-                    }
-                    ////else
-                    ////{
-                    ////    // It's needed to write this error into a log file...
-                    ////}
-                }
-                else
-                {
-                    item.OverrideProperties(docMapper, metadata.Instance);
-                    metadata.BecomePersistent(item.Version);
-                }
-
-                #endregion
+                item.OverrideProperties(docMapper, metadata.Instance);
+                metadata.BecomePersistent(item.Version);
             }
         }
 

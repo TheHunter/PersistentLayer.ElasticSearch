@@ -31,8 +31,6 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
                 // returns the document from storage.
                 Assert.NotNull(dao.FindBy<Person>(instance.Id));
             }
-
-            client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
         }
 
         [Theory]
@@ -61,30 +59,81 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
             }
         }
 
-        //[Theory]
-        //[InlineData("currentforfind")]
-        public void UniqueResultTest()
+        [Theory]
+        [InlineData("currentforfind")]
+        public void UniqueResultTest(string defaultIndex)
+        {
+            var client = this.MakeElasticClient(defaultIndex);
+            client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
+            client.Refresh(descriptor => descriptor.Force());
+            
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var tranProvider = dao.GetTransactionProvider();
+                tranProvider.BeginTransaction();
+
+                var persons = new List<Person>();
+                persons.Add(new Person { Name = "Ton1", Surname = "Jones", Cf = "mycf1" });
+                persons.Add(new Person { Name = "Ton2", Surname = "Jones", Cf = "mycf2" });
+                persons.Add(new Person { Name = "Ton3", Surname = "Jones", Cf = "mycf2" });
+                persons.Add(new Person { Name = "Ton4", Surname = "Jones", Cf = "mycf2" });
+                persons.Add(new Person { Name = "Ton5", Surname = "Jones", Cf = "mycf2" });
+
+                dao.MakePersistent<Person>(persons);
+                tranProvider.CommitTransaction();
+            }
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var result = dao.UniqueResult<Person>(person => person.Name == "Ton3");
+                Assert.NotNull(result);
+            }
+        }
+
+        [Theory]
+        [InlineData("currentforfind")]
+        public void FindAllTest(string defaultIndex)
+        {
+            var client = this.MakeElasticClient(defaultIndex);
+            client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
+            client.Refresh(descriptor => descriptor.Force());
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var tranProvider = dao.GetTransactionProvider();
+                tranProvider.BeginTransaction();
+
+                var persons = new List<Person>
+                {
+                    new Person {Name = "Ton1", Surname = "Jones", Cf = "mycf1"},
+                    new Person {Name = "Ton2", Surname = "Jones", Cf = "mycf2"},
+                    new Person {Name = "Ton3", Surname = "Jones", Cf = "mycf2"},
+                    new Person {Name = "Ton4", Surname = "Jones", Cf = "mycf2"},
+                    new Person {Name = "Ton5", Surname = "Jones", Cf = "mycf2"}
+                };
+
+                dao.MakePersistent<Person>(persons);
+                tranProvider.CommitTransaction();
+            }
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var result = dao.FindAll<Person>();
+                Assert.NotNull(result);
+                Assert.Equal(5, result.Count());
+            }
+        }
+
+        [Theory]
+        [InlineData("currentforfind")]
+        public void ExecuteExpressionTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("currentforfind")]
-        public void FindAllTest()
-        {
-            throw new NotImplementedException();
-        }
-
-        //[Theory]
-        //[InlineData("currentforfind")]
-        public void ExecuteExpressionTest()
-        {
-            throw new NotImplementedException();
-        }
-
-        //[Theory]
-        //[InlineData("currentforfind")]
-        public void GetPagedResultTest()
+        [Theory]
+        [InlineData("currentforfind")]
+        public void GetPagedResultTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
@@ -177,58 +226,92 @@ namespace PersistentLayer.ElasticSearch.Test.DAO
             }
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void MakeTransientTest()
+        [Theory]
+        [InlineData("current")]
+        public void MakeTransientTest(string defaultIndex)
+        {
+            var client = this.MakeElasticClient(defaultIndex);
+            client.DeleteIndex(descriptor => descriptor.Index(defaultIndex));
+
+            List<Person> persons;
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var tranProvider = dao.GetTransactionProvider();
+                tranProvider.BeginTransaction();
+
+                persons = new List<Person>
+                {
+                    new Person {Name = "Ton1", Surname = "Jones", Cf = "mycf1"},
+                    new Person {Name = "Ton2", Surname = "Jones", Cf = "mycf2"},
+                    new Person {Name = "Ton3", Surname = "Jones", Cf = "mycf2"},
+                    new Person {Name = "Ton4", Surname = "Jones", Cf = "mycf2"},
+                    new Person {Name = "Ton5", Surname = "Jones", Cf = "mycf2"}
+                };
+
+                dao.MakePersistent<Person>(persons);
+                tranProvider.CommitTransaction();
+            }
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var tranProvider = dao.GetTransactionProvider();
+                tranProvider.BeginTransaction();
+                dao.MakeTransient(persons.Take(2));
+                tranProvider.CommitTransaction();
+            }
+
+            using (var dao = this.MakePagedDao(defaultIndex))
+            {
+                var result = dao.FindAll<Person>();
+                Assert.Equal(3, result.Count());
+            }
+        }
+
+        [Theory]
+        [InlineData("current")]
+        public void GetIdentifierTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void GetIdentifierTest()
+        [Theory]
+        [InlineData("current")]
+        public void IsCachedTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void IsCachedTest()
+        [Theory]
+        [InlineData("current")]
+        public void IsDirtyTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void IsDirtyTest()
+        [Theory]
+        [InlineData("current")]
+        public void LoadTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void LoadTest()
+        [Theory]
+        [InlineData("current")]
+        public void SessionWithChangesTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void SessionWithChangesTest()
+        [Theory]
+        [InlineData("current")]
+        public void EvictTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
 
-        //[Theory]
-        //[InlineData("current")]
-        public void EvictTest()
-        {
-            throw new NotImplementedException();
-        }
-
-        //[Theory]
-        //[InlineData("current")]
-        public void FlushTest()
+        [Theory]
+        [InlineData("current")]
+        public void FlushTest(string defaultIndex)
         {
             throw new NotImplementedException();
         }
