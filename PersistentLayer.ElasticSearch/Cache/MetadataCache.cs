@@ -388,7 +388,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                 if (metadata == null)
                     continue;
 
-                metadata.BecomePersistent(item.Version);
+                metadata.MakePersistent(item.Version);
 
                 #region
                 
@@ -405,7 +405,7 @@ namespace PersistentLayer.ElasticSearch.Cache
 
                     if (respo.IsValid)
                     {
-                        metadata.BecomePersistent(respo.Version);
+                        metadata.MakePersistent(respo.Version);
                     }
                     else
                     {
@@ -414,7 +414,7 @@ namespace PersistentLayer.ElasticSearch.Cache
                 }
                 else
                 {
-                    metadata.BecomePersistent(item.Version);
+                    metadata.MakePersistent(item.Version);
                 }
                 
                 #endregion

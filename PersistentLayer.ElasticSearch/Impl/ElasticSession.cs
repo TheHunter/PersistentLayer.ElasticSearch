@@ -588,62 +588,78 @@ namespace PersistentLayer.ElasticSearch.Impl
             IBulkRequest request = new BulkRequest();
             request.Operations = new List<IBulkOperation>();
 
-            var metadataToPersist = cache.Metadata.Where(info => info.Origin == OriginContext.Newone || info.HasChanged())
-                .ToList();
+            //var metadataToPersist = cache.Metadata.Where(info => info.Origin == OriginContext.Newone || info.HasChanged())
+            //    .ToList();
 
-            if (!metadataToPersist.Any())
-                return;
+            //if (!metadataToPersist.Any())
+            //    return;
 
-            foreach (var metadata in metadataToPersist)
+            //foreach (var metadata in metadataToPersist)
+            foreach (var metadata in cache.Metadata)
             {
-                /*
-                    iT'S OCCURRED TO DO 3 CASES:
-                 *  1) When doc needs to be updated only.
-                 *  2) When doc needs to become persistent (removing the idsession property on repository server..)
-                 *  3) WHen doc needs to make both operations (1 & 2).
-                */
-
-                var docMapper = this.GetDocumentMapper(metadata.InstanceType, metadata.IndexName);
-                var current = new BulkUpdateOperation<object, object>(metadata.Id)
+                switch (metadata.Action)
                 {
-                    Index = metadata.IndexName,
-                    Type = metadata.TypeName,
-                    Version = metadata.Version,
-                    ////VersionType = VersionType.Force,
-                    ////Script =
-                    ////    "doc.each { k, v -> if (k == version) { v++ }; ctx._source[k] = v }; ctx._source.remove(idsessionname); ",
-                    ////Params = new Dictionary<string, object>
-                    ////{
-                    ////    {"doc", metadata.Instance},
-                    ////    {"idsessionname", SessionFieldName},
-                    ////    {"version", docMapper.Version != null ? docMapper.Version.ElasticName : string.Empty}
-                    ////}
-                };
-
-                string versionStr = string.Empty;
-                var pars = new Dictionary<string, object>
-                {
-                    {"doc", metadata.Instance},
-                    {"idsessionname", SessionFieldName}
-                };
-
-                if (!metadata.HasChanged())
-                {
-                    current.VersionType = VersionType.Force;
-                }
-                else
-                {
-                    if (docMapper.Version != null)
+                    case PersistenceAction.ToBeDeleted:
                     {
-                        versionStr = " if (k == version) { v++ }";
-                        pars.Add("version", docMapper.Version.ElasticName ?? string.Empty);
+                        var current = new BulkDeleteOperation<object>(metadata.Id)
+                        {
+                            Index = metadata.IndexName,
+                            Type = metadata.TypeName,
+                            Version = metadata.Version
+                        };
+                        request.Operations.Add(current);
+                        break;
+                    }
+                    case PersistenceAction.ToBeUpdated:
+                    {
+                        /*
+                            iT'S OCCURRED TO DO 3 CASES:
+                         *  1) When doc needs to be updated only.
+                         *  2) When doc needs to become persistent (removing the idsession property on repository server..)
+                         *  3) WHen doc needs to make both operations (1 & 2).
+                        */
+
+                        var docMapper = this.GetDocumentMapper(metadata.InstanceType, metadata.IndexName);
+                        var current = new BulkUpdateOperation<object, object>(metadata.Id)
+                        {
+                            Index = metadata.IndexName,
+                            Type = metadata.TypeName,
+                            Version = metadata.Version,
+                        };
+
+                        string versionStr = string.Empty;
+                        var pars = new Dictionary<string, object>
+                        {
+                            {"doc", metadata.Instance},
+                            {"idsessionname", SessionFieldName}
+                        };
+
+                        if (!metadata.HasChanged())
+                        {
+                            current.VersionType = VersionType.Force;
+                        }
+                        else
+                        {
+                            if (docMapper.Version != null)
+                            {
+                                versionStr = " if (k == version) { v++ }";
+                                pars.Add("version", docMapper.Version.ElasticName ?? string.Empty);
+                            }
+                        }
+                        current.Script = string.Format("doc.each {{ k, v ->{0} ctx._source[k] = v }}; ctx._source.remove(idsessionname);", versionStr);
+                        current.Params = pars;
+
+                        request.Operations.Add(current);
+                        break;
                     }
                 }
-                current.Script = string.Format("doc.each {{ k, v ->{0} ctx._source[k] = v }}; ctx._source.remove(idsessionname);", versionStr);
-                current.Params = pars;
-
-                request.Operations.Add(current);
             }
+
+            #region
+
+            // no operations to persist on storage.
+            if (!request.Operations.Any())
+                return;
 
             var response = this.Client.Bulk(request);
             if (response.Errors)
@@ -680,8 +696,9 @@ namespace PersistentLayer.ElasticSearch.Impl
 
                 var docMapper = this.GetDocumentMapper(metadata.InstanceType, metadata.IndexName);
                 item.OverrideProperties(docMapper, metadata.Instance);
-                metadata.BecomePersistent(item.Version);
+                metadata.MakePersistent(item.Version);
             }
+            #endregion
         }
 
         private void Restore(ISessionCache cache, IEnumerable<BulkOperationResponseItem> instancesToRestore)

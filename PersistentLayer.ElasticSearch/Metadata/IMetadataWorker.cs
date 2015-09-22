@@ -23,6 +23,14 @@
         OriginContext Origin { get; }
 
         /// <summary>
+        /// Gets or sets the action to compute of this metadata on storage.
+        /// </summary>
+        /// <value>
+        /// The action.
+        /// </value>
+        PersistenceAction Action { get; set; }
+
+        /// <summary>
         /// Determines whether this instance has changed.
         /// </summary>
         /// <returns></returns>
@@ -46,7 +54,7 @@
         /// Becomes the metadata persistent.
         /// </summary>
         /// <param name="version">The version.</param>
-        void BecomePersistent(string version);
+        void MakePersistent(string version);
 
         /// <summary>
         /// Makes read only this instance due to the argument value.

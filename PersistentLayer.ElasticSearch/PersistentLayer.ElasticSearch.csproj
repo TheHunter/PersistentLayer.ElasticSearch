@@ -111,7 +111,7 @@
     <Compile Include="Metadata\MetadataComparer.cs" />
     <Compile Include="Metadata\MetadataWorker.cs" />
     <Compile Include="Metadata\OriginContext.cs" />
-    <Compile Include="Metadata\PersistenceStatus.cs" />
+    <Compile Include="Metadata\PersistenceAction.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy\DocumentAdapter.cs" />
     <Compile Include="Proxy\DocumentAdapterResolver.cs" />

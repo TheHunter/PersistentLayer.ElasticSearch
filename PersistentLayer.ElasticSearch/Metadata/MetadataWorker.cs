@@ -50,6 +50,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.readOnly = readOnly;
             this.Origin = origin;
             this.emptyReference = Activator.CreateInstance(this.InstanceType, true);
+            this.Action = PersistenceAction.ToBeUpdated;
 
             if (!readOnly)
                 this.SetPreviousStatus(this.evaluator.Clone(this.Instance));
@@ -103,6 +104,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.Origin = origin;
             this.emptyReference = Activator.CreateInstance(this.InstanceType, true);
             this.SetPreviousStatus(originalStatus);
+            this.Action = PersistenceAction.ToBeUpdated;
         }
 
         /// <summary>
@@ -136,6 +138,8 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// The origin.
         /// </value>
         public OriginContext Origin { get; private set; }
+
+        public PersistenceAction Action { get; set; }
 
         /// <summary>
         /// Determines whether this instance has changed.
@@ -171,6 +175,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
             this.Id = metadata.Id;
             this.Version = metadata.Version;
             this.Origin = metadata.Origin;
+            this.Action = metadata.Action;
             return true;
         }
 
@@ -209,7 +214,7 @@ namespace PersistentLayer.ElasticSearch.Metadata
         /// </summary>
         /// <param name="version">The version.</param>
         /// <exception cref="ArgumentNullException">version;Version for updating metadata cannot be null.</exception>
-        public void BecomePersistent(string version)
+        public void MakePersistent(string version)
         {
             if (string.IsNullOrWhiteSpace(version))
                 throw new ArgumentNullException("version", "Version for updating metadata cannot be null.");

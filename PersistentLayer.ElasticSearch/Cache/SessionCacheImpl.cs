@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using Nest;
 using PersistentLayer.ElasticSearch.Exceptions;
-using PersistentLayer.ElasticSearch.Extensions;
 using PersistentLayer.ElasticSearch.Metadata;
 
 namespace PersistentLayer.ElasticSearch.Cache
@@ -146,39 +145,11 @@ namespace PersistentLayer.ElasticSearch.Cache
         {
             this.ThrowIfDisposed();
 
-            Func<IMetadataWorker, string, bool> func = (info, id) =>
-                info.Id.Equals(id, StringComparison.InvariantCulture);
-
-            var toInspect = this.GetCache(typeName).ToList();
-
-            IBulkRequest request = new BulkRequest();
-
             foreach (var id in ids)
             {
-                var metadata = toInspect.SingleOrDefault(info => func.Invoke(info, id));
-                if (metadata != null)
-                {
-                    if (metadata.Origin == OriginContext.Newone)
-                    {
-                        request.Operations.Add(
-                            new BulkDeleteOperation<object>(metadata.Id)
-                            {
-                                Index = metadata.IndexName,
-                                Type = metadata.TypeName,
-                                Version = metadata.Version
-                            });
-                    }
-                    this.localCache.Remove(metadata);
-                }
+                this.localCache.RemoveWhere(worker => worker.Id.Equals(id, StringComparison.InvariantCulture)
+                    && worker.TypeName.Equals(typeName, StringComparison.InvariantCulture));
             }
-
-            if (!request.Operations.Any())
-                return true;
-
-            IBulkResponse response = this.client.Bulk(request);
-            if (response.ItemsWithErrors.Any())
-                throw new BulkOperationException("There are problems when some instances were processed ",
-                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
 
             return true;
         }
@@ -188,72 +159,19 @@ namespace PersistentLayer.ElasticSearch.Cache
             this.ThrowIfDisposed();
 
             var typeName = this.client.Infer.TypeName<TEntity>();
-            var toInspect = this.GetCache(cond: info => info.TypeName.Equals(typeName, StringComparison.InvariantCulture)
-                ).ToList();
-
-            IBulkRequest request = new BulkRequest();
-
             foreach (var instance in instances)
             {
-                var metadata = toInspect.FirstOrDefault(info => info.Instance == instance);
-                if (metadata != null)
-                {
-                    if (metadata.Origin == OriginContext.Newone)
-                    {
-                        request.Operations.Add(
-                            new BulkDeleteOperation<object>(metadata.Id)
-                            {
-                                Index = metadata.IndexName,
-                                Type = metadata.TypeName,
-                                Version = metadata.Version
-                            });
-                    }
-                    this.localCache.Remove(metadata);
-                }
+                this.localCache.RemoveWhere(worker => worker.Instance == instance && worker.TypeName.Equals(typeName, StringComparison.InvariantCulture));
             }
-
-            if (request.Operations == null || !request.Operations.Any())
-                return true;
-
-            IBulkResponse response = this.client.Bulk(request);
-            if (response.ItemsWithErrors.Any())
-                throw new BulkOperationException("There are problems when some instances were processed ",
-                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
-
+            
             return true;
         }
 
         public bool Detach(Expression<Func<IMetadataWorker, bool>> exp)
         {
-            var toRemove = this.GetCache(cond: exp.Compile())
-                .ToList();
+            this.ThrowIfDisposed();
 
-            IBulkRequest request = new BulkRequest();
-
-            foreach (var metadata in toRemove)
-            {
-                if (metadata.Origin == OriginContext.Newone)
-                {
-                    request.Operations.Add(
-                        new BulkDeleteOperation<object>(metadata.Id)
-                        {
-                            Index = metadata.IndexName,
-                            Type = metadata.TypeName,
-                            Version = metadata.Version
-                        });
-                }
-                this.localCache.Remove(metadata);
-            }
-
-            if (!request.Operations.Any())
-                return true;
-
-            IBulkResponse response = this.client.Bulk(request);
-            if (response.ItemsWithErrors.Any())
-                throw new BulkOperationException("There are problems when some instances were processed ",
-                    response.ItemsWithErrors.Select(item => item.ToDocumentResponse()));
-
-            return true;
+            return this.localCache.RemoveWhere(worker => exp.Compile().Invoke(worker)) > 0;
         }
 
         public void Clear()
